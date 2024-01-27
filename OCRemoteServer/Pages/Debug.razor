@@ -1,0 +1,44 @@
+﻿@page "/debug"
+@using BlazorStrap
+@using GammaLibrary.Extensions
+@using OCRemoteServer.Controller
+<h3>Debug</h3>
+
+
+
+<BSInputGroup Size="Size.Medium" MarginBottom="Margins.Medium">
+    <span class="@BS.Input_Group_Text">Command</span>
+    <BSInput InputType="InputType.Text" @bind-Value="command" />
+</BSInputGroup>
+
+<BSButton Color="BSColor.Success" OnClick="SendCommand">Send</BSButton>
+
+<code style="white-space: pre-line">
+    @logger
+    
+</code>
+
+@code {
+    string command = "";
+    string logger = "";
+
+    async Task SendCommand()
+    {
+        try
+        {
+            var msg = await RemoteManager.Request(command);
+
+            logger += "\n" + msg;
+            
+        }
+        catch (Exception e)
+        {
+            logger += "\n" + e.Message;
+
+
+        }
+
+    }
+
+}
+

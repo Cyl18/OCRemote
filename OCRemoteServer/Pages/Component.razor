@@ -1,0 +1,94 @@
+﻿@page "/component"
+@using BlazorStrap
+@using System.Text.Json
+
+<h3>Component</h3>
+
+@if (loading)
+{
+    <BSAlert HasIcon="true" Color="BSColor.Info">加载中</BSAlert>
+}
+else
+{
+    <BSListGroup>
+        @foreach (var (address, name) in components)
+        {
+            <BSListGroupItem>@address: @name</BSListGroupItem>
+        }
+    </BSListGroup>
+    <br/>
+
+        @foreach (var (name, methods1) in methods)
+        {
+            <h4>@name</h4>
+            <BSAccordion>
+                @foreach (var s in methods1)
+                {
+                    
+                    <BSAccordionItem DefaultShown="false">
+                        <Header>@s</Header>
+                        <Content>
+                            <BSButton Color="BSColor.Primary" OnClick="@(() => GetDoc1(name, s))">获取</BSButton>
+                            <br/>
+                            <br/>
+                            @GetDoc(name, s)
+                        </Content>
+                    </BSAccordionItem>
+                }
+            </BSAccordion>
+            <br/>
+        }
+
+}
+@code {
+    bool loading = true;
+    (string address, string name)[] components;
+    List<(string name, string[] methods)> methods = new List<(string name, string[] methods)>();
+    Dictionary<(string, string), string> docCache = new Dictionary<(string, string), string>();
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var componentJson = await RemoteManager.Request("return require('component').list()");
+        components = JsonDocument.Parse(componentJson)
+            .RootElement.EnumerateObject().Select(x => (address: x.Name, name: x.Value.GetString()!)).ToArray();
+        foreach (var (address, name) in components.DistinctBy(x => x.name))
+        {
+            var docJson = await RemoteManager.Request($"return require('component').methods('{address}') or {{}}");
+            if (docJson == "[]") continue;
+            
+            var emethods = JsonDocument.Parse(docJson)
+                .RootElement.EnumerateObject().Select(x => x.Name).ToArray();
+            methods.Add((name, emethods));
+        }
+
+
+        loading = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    string GetDoc(string name, string s)
+    {
+        var address = components.First(x => x.name == name).address;
+
+        if (!docCache.ContainsKey((address, s)))
+        {
+            return "";
+
+        }
+            return docCache[(address, s)];
+
+    }
+
+    async void GetDoc1(string name, string s)
+    {
+        var address = components.First(x => x.name == name).address;
+
+        var json = await RemoteManager.Request($"return require('component').doc('{address}', '{s}')").ConfigureAwait(false);
+        docCache[(address, s)] = json;
+        InvokeAsync(StateHasChanged);
+    }
+
+}
