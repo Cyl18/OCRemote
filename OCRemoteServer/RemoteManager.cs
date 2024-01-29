@@ -26,6 +26,16 @@ namespace OCRemoteServer
         {
             Task.Run(async () =>
             {
+                try
+                {
+                    await Request("return 1");
+                    OnInitialized();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("OnInitialized failed: " + e);
+                }
+
                 while (true)
                 {
                     lock (locker)
@@ -45,6 +55,10 @@ namespace OCRemoteServer
             });
         }
 
+        public static void OnInitialized()
+        {
+
+        }
 
         public static Task<string> Request(string lua)
         {
