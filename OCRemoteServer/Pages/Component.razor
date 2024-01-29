@@ -28,11 +28,6 @@ else
 				<BSAccordionItem DefaultShown="false">
 					<Header>@s</Header>
 					<Content>
-						@*
-			<BSButton Color="BSColor.Primary" OnClick="@(() => GetDoc1(name, s))">获取</BSButton>
-			<br />
-			*@
-						<br />
 						@GetDoc(name, s)
 					</Content>
 				</BSAccordionItem>
@@ -53,12 +48,14 @@ else
 
 	protected override async Task OnInitializedAsync()
 	{
-		var componentJson = await RemoteManager.Request("return require('component').list()");
+		var componentJson = await RemoteManager.Request("return require('component').list()").ConfigureAwait(false);
 		components = JsonDocument.Parse(componentJson)
 			.RootElement.EnumerateObject().Select(x => (address: x.Name, name: x.Value.GetString()!)).ToArray();
+	    var tasks = new List<Task>();
+
 		foreach (var (address, name) in components.DistinctBy(x => x.name))
 		{
-			var docJson = await RemoteManager.Request($"return require('component').methods('{address}') or {{}}");
+			var docJson = await RemoteManager.Request($"return require('component').methods('{address}') or {{}}").ConfigureAwait(false);
 			if (docJson == "[]") continue;
 
 			var emethods = JsonDocument.Parse(docJson)
@@ -66,11 +63,11 @@ else
 			methods.Add((name, emethods));
 			foreach (var s in emethods)
 			{
-				GetDoc1(name, s);
+				tasks.Add(GetDoc1(name, s));
 			}
 		}
 
-
+	    await Task.WhenAll(tasks);
 		loading = false;
 		InvokeAsync(StateHasChanged);
 	}
@@ -88,12 +85,11 @@ else
 
 	}
 
-	async void GetDoc1(string name, string s)
+	async Task GetDoc1(string name, string s)
 	{
 		var address = components.First(x => x.name == name).address;
 
 		var json = await RemoteManager.Request($"return require('component').doc('{address}', '{s}')").ConfigureAwait(false);
 		docCache[(address, s)] = json;
-		InvokeAsync(StateHasChanged);
 	}
 }
