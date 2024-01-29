@@ -1,9 +1,110 @@
 ﻿@page "/cpustatus/{cpuid}"
-<h3>CPUStatus</h3>
-
+@using System.Text.Json
+@using System.Timers
+@using GammaLibrary.Extensions
+@implements IDisposable
 @code {
 
     [Parameter]
-    public int CpuID { get; set; }
+    public string CpuID { get; set; }
+    List<AEItem[]> crafting = new();
+    List<AEItem[]> pending = new();
+    AEItem LastItem;
+    Timer timer = new Timer(500);
+
+    protected override async Task OnInitializedAsync()
+    {
+        timer.Elapsed += async (sender, args) =>
+        {
+            var info = JsonDocument.Parse(await RemoteManager.Request($"return GetCpuInfo({CpuID})")).RootElement.GetString();
+            var pending1 = info.Split("^#^#")[2].JsonDeserialize<AEItem[]>();
+            var crafting1 = info.Split("^#^#")[0].JsonDeserialize<AEItem[]>();
+            LastItem = info.Split("^#^#")[3].JsonDeserialize<AEItem>();
+            crafting.Clear();
+            pending.Clear();
+            IEnumerable<AEItem> items1 = crafting1;
+            while (items1.Any())
+            {
+                var line = items1.Take(15).ToArray();
+                crafting.Add(line);
+                items1 = items1.Skip(15);
+            }
+
+            IEnumerable<AEItem> items2 = pending1;
+            while (items2.Any())
+            {
+                var line = items2.Take(15).ToArray();
+                pending.Add(line);
+                items2 = items2.Skip(15);
+            }
+            InvokeAsync(StateHasChanged);
+        };
+        timer.Start();
+    }
+
+    public void Dispose()
+    {
+        timer.Dispose();
+    }
 
 }
+
+<h2>CPUStatus</h2>
+<h3>AE CPU: @CpuID</h3>
+<h4>最终产物</h4>
+@if (LastItem != null)
+{
+    
+    <div class="image-container" >
+        <img src="/api/AE/@LastItem.ImagePath" width="64" height="64" alt="Image" />
+        <div class="text-overlay">@LastItem.Chinese @(LastItem.SizeM)</div>
+
+    </div>
+
+}
+
+<h4>正在合成</h4>
+
+<table>
+<tbody>
+@foreach (var row in crafting)
+{
+    <tr>
+@foreach (var i in row)
+{
+    <td>
+        <div class="image-container" >
+            <img src="/api/AE/@i.ImagePath" width="64" height="64" alt="Image" />
+            <div class="text-overlay">@i.Chinese @(i.SizeM)</div>
+
+        </div>
+                    
+    </td>
+}
+    </tr>
+}
+</tbody>
+</table>
+
+<h4>计划合成</h4>
+<table>
+    <tbody>
+        @foreach (var row in pending)
+    {
+        <tr>
+                @foreach (var i in row)
+            {
+                <td>
+                    <div class="image-container">
+                        <img src="/api/AE/@i.ImagePath" width="64" height="64" alt="Image" />
+                        <div class="text-overlay">@i.Chinese @(i.SizeM)</div>
+
+                    </div>
+
+                </td>
+            }
+        </tr>
+    }
+    </tbody>
+</table>
+

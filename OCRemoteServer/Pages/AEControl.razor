@@ -6,6 +6,7 @@
 @using System.Text.Json
 @inject IJSRuntime js;
 @inject IBlazorStrap _blazorStrap
+@inject NavigationManager nav
 @implements IDisposable
 <BSToaster />
 
@@ -44,7 +45,7 @@
         <BSTD>存储容量</BSTD>
         <BSTD>协处理器</BSTD>
         <BSTD>正在合成</BSTD>
-        <BSTD>取消</BSTD>
+        <BSTD>动作</BSTD>
     </BSTR>
 </BSTHead>
 
@@ -72,7 +73,10 @@
                 }
                 
             </div></BSTD>
-            <BSTD><BSButton Color="BSColor.Danger" OnClick="() => Cancel(x.ID)">取消</BSButton></BSTD>
+            <BSTD>
+                <BSButton Color="BSColor.Primary" OnClick="() => View(x.ID)">查看</BSButton>
+                <BSButton Color="BSColor.Danger" OnClick="() => Cancel(x.ID)">取消</BSButton>
+            </BSTD>
         </BSTR>
     }
 </BSTBody>
@@ -204,6 +208,12 @@
     {
 
         RemoteManager.Request($"return CancelCrafting({xID})");
+    }
+
+    void View(int xID)
+    {
+        nav.NavigateTo($"/cpustatus/{xID}");
+
     }
 
 }
