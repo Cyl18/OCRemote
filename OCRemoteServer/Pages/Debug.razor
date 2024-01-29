@@ -28,12 +28,12 @@
         {
             var msg = await RemoteManager.Request(command);
 
-            logger += "\n" + msg;
+            logger = "\n" + msg;
             
         }
         catch (Exception e)
         {
-            logger += "\n" + e.Message;
+            logger = "\n" + e.Message;
 
 
         }

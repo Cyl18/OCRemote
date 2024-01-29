@@ -4,6 +4,7 @@ using BlazorStrap;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OCRemoteServer;
 using OCRemoteServer.Controller;
 
 var builder = WebApplication.CreateBuilder(args);

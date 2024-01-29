@@ -10,6 +10,15 @@ namespace OCRemoteServer
         static int commandId = 0;
         static readonly object locker = new();
 
+        public static async Task SyncCode()
+        {
+            var dir = "Q:\\Alist\\OC";
+            foreach (var file in Directory.GetFiles(dir))
+            {
+                var text = File.ReadAllText(file);
+                await RemoteManager.Request(text);
+            }
+        }
 
         static RemoteManager()
         {

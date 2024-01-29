@@ -6,7 +6,7 @@
 <h3>SyncCode</h3>
 <BSToaster />
 
-<BSButton OnClick="@(() => Sync())">同步代码</BSButton>
+<BSButton Color="BSColor.Primary" OnClick="@(() => Sync())">同步代码</BSButton>
 
 
 @code {
@@ -20,14 +20,9 @@
         });
     }
 
-    async void Sync()
+    public async void Sync()
     {
-        var dir = Path.Combine(Environment.CurrentDirectory, "wwwroot/lua");
-        foreach (var file in Directory.GetFiles(dir))
-        {
-            var text = File.ReadAllText(file);
-            await RemoteManager.Request(text);
-        }
+        await RemoteManager.SyncCode();
         ShowToast("DONE!");
     }
 
