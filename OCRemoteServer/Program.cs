@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using OCRemoteServer;
 using OCRemoteServer.Controller;
 
+
+
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.

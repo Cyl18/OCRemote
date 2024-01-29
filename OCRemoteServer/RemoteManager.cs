@@ -42,7 +42,7 @@ namespace OCRemoteServer
                     {
                         foreach (var (i, time) in times.ToList())
                         {
-                            if (DateTime.Now - time > TimeSpan.FromSeconds(60))
+                            if (DateTime.Now - time > TimeSpan.FromSeconds(30))
                             {
                                 handlers[i].SetCanceled();
                                 handlers.Remove(i);
@@ -55,8 +55,9 @@ namespace OCRemoteServer
             });
         }
 
-        public static void OnInitialized()
+        public static async void OnInitialized()
         {
+            await SyncCode();
 
         }
 

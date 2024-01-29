@@ -1,0 +1,204 @@
+﻿@page "/aecontrol"
+@using GammaLibrary.Extensions
+@using Humanizer
+@using System.Timers
+@using BlazorStrap
+@using System.Text.Json
+@inject IJSRuntime js;
+@inject IBlazorStrap _blazorStrap
+@implements IDisposable
+<BSToaster />
+
+<h3>AEControl</h3>
+<h4>处理器状态</h4>
+
+<BSTable IsResponsive="true" IsStriped="true">
+<BSTHead>
+    <BSTR>
+        <BSTD>处理器 ID</BSTD>
+        <BSTD>处理器名</BSTD>
+        <BSTD>存储容量</BSTD>
+        <BSTD>协处理器</BSTD>
+        <BSTD>正在合成</BSTD>
+        <BSTD>取消</BSTD>
+    </BSTR>
+</BSTHead>
+
+
+
+<BSTBody>
+    @foreach (var x in infos)
+    {
+        <BSTR>
+            <BSTD>@x.ID</BSTD>
+            <BSTD>@x.Name</BSTD>
+            <BSTD>@x.Storage.Bytes()</BSTD>
+            <BSTD>@x.Coprocessors</BSTD>
+            <BSTD><div class="image-container">
+                @if (x.CraftingItem != null)
+                {
+                    <img src="/api/AE/@x.CraftingItem.ImagePath" width="64" height="64" alt="Image"/>
+                    <div class="text-overlay">@x.CraftingItem.Chinese @(x.CraftingItem.SizeM) @(x.CraftingItem.IsCraftable ? "+" : "")</div>
+
+                        }
+                @if (x.CraftingItem == null)
+                        {
+                    <div>NULL</div>                
+                
+                }
+                
+            </div></BSTD>
+            <BSTD><BSButton Color="BSColor.Danger" OnClick="() => Cancel(x.ID)">取消</BSButton></BSTD>
+        </BSTR>
+    }
+</BSTBody>
+</BSTable>
+<h4>点菜</h4>
+@if (crafting)
+{
+    <BSCard CardType="CardType.Card" style="width: 24rem;">
+        <BSCard CardType="CardType.Body">
+            <BSLabel>合成 @itemName</BSLabel>
+            <BSInputGroup Size="Size.Medium" MarginBottom="Margins.Medium">
+
+                <span class="@BS.Input_Group_Text">数量</span>
+                <BSInput TValue="int" InputType="InputType.Number" @bind-Value="count" />
+
+            </BSInputGroup>
+
+        </BSCard>
+        <BSCard CardType="CardType.Footer">
+            <BSButton Color="BSColor.Primary" OnClick="() => SubmitCrafting()">合成</BSButton>
+            <BSButton Color="BSColor.Primary" OnClick="() => {crafting = false;}">取消</BSButton>
+        </BSCard>
+    </BSCard>
+
+}
+    
+
+<table>
+    <tbody>
+    @foreach (var row in grid)
+    {
+        <tr>
+            @foreach (var i in row)
+            {
+                <td>
+                    <div class="image-container" >
+                            <img src="/api/AE/@i.ImagePath" width="64" height="64" alt="Image" @onclick="() => Craft(i)" />
+                        <div class="text-overlay">@i.Chinese @(i.SizeM) @(i.IsCraftable ? "+" : "")</div>
+
+                    </div>
+                    
+                     </td>
+            }
+        </tr>
+    }
+    </tbody>
+</table>
+
+
+@code {
+    bool crafting = false;
+    List<AEItem[]> grid = new ();
+    string itemName;
+    Timer timer = new Timer(2000);
+    int count = 1;
+    CpuInfo[] infos = new CpuInfo[0];
+    int idleCpus = 0;
+
+    void ShowToast(string text)
+    {
+        _blazorStrap.Toaster.Add("警告", text, o =>
+        {
+            o.Color = BSColor.Warning;
+            o.HasIcon = true;
+            o.Toast = Toast.TopRight;
+        });
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var items = (await RemoteManager.Request("return require(\"component\").me_controller.getItemsInNetwork()")).JsonDeserialize<List<AEItem>>();
+        AEManager.LastAEItem = items;
+        IEnumerable<AEItem> items1 = items;
+        while (items1.Any())
+        {
+            var line = items1.Take(15).ToArray();
+            grid.Add(line);
+            items1 = items1.Skip(15);
+        }
+
+        timer.Elapsed += async (s, e) =>
+        {
+            try
+            {
+                var request = (await RemoteManager.Request("return GetAllCpuInfo()")).JsonDeserialize<CpuInfo[]>();
+                var i = 0;
+                foreach (var cpuInfo in request)
+                {
+                    if (cpuInfo.Busy)
+                    {
+                        var info = JsonDocument.Parse(await RemoteManager.Request($"return GetCpuInfo({i})")).RootElement.GetString();
+                        var item = info.Split("^#^#")[3].JsonDeserialize<AEItem>();
+                        cpuInfo.CraftingItem = item;
+                    }
+                    cpuInfo.ID = i++;
+                }
+                idleCpus = request.Count(x => !x.Busy);
+                infos = request.Where(x => x.Busy).ToArray();
+
+
+                InvokeAsync(StateHasChanged);
+            }
+            catch (Exception e1)
+            {
+                Console.WriteLine(e1);
+            }
+        };
+        timer.Start();
+
+    }
+
+
+    public void Dispose()
+    {
+        timer.Dispose();
+    }
+    AEItem craftItem;
+
+    async Task Craft(AEItem aeItem)
+    {
+        if (!aeItem.IsCraftable) return;
+        itemName = aeItem.Chinese;
+        craftItem = aeItem;
+        crafting = true;
+        await js.InvokeAsync<object>("on");
+        InvokeAsync(StateHasChanged);
+
+    }
+
+    async Task SubmitCrafting()
+    {
+        var guid = "C" + new Guid().ToString("N");
+        var request = await RemoteManager.Request($"{guid} = Craft('{craftItem.Name}', {craftItem.Damage}, {count})");
+        var s = await RemoteManager.Request($"return {guid}.isCanceled()");
+        if (s.Contains("true"))
+        {
+            ShowToast("点菜失败！！！！"); 
+        }
+        else
+        {
+            ShowToast("点菜成功"); 
+        }
+        crafting = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    void Cancel(int xID)
+    {
+
+        RemoteManager.Request($"return CancelCrafting({xID})");
+    }
+
+}

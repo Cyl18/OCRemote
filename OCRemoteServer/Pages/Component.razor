@@ -13,7 +13,7 @@ else
 	<BSListGroup>
 		@foreach (var (address, name) in components)
 		{
-			<BSListGroupItem>@address: @name</BSListGroupItem>
+			<BSListGroupItem>@address: @name <BSButton Color="BSColor.Success" OnClick="() => Copy(name)">复制</BSButton></BSListGroupItem>
 		}
 	</BSListGroup>
 	<br />
@@ -51,7 +51,7 @@ else
 		var componentJson = await RemoteManager.Request("return require('component').list()").ConfigureAwait(false);
 		components = JsonDocument.Parse(componentJson)
 			.RootElement.EnumerateObject().Select(x => (address: x.Name, name: x.Value.GetString()!)).ToArray();
-	    var tasks = new List<Task>();
+		var tasks = new List<Task>();
 
 		foreach (var (address, name) in components.DistinctBy(x => x.name))
 		{
@@ -67,7 +67,7 @@ else
 			}
 		}
 
-	    await Task.WhenAll(tasks);
+		await Task.WhenAll(tasks);
 		loading = false;
 		InvokeAsync(StateHasChanged);
 	}
@@ -92,4 +92,10 @@ else
 		var json = await RemoteManager.Request($"return require('component').doc('{address}', '{s}')").ConfigureAwait(false);
 		docCache[(address, s)] = json;
 	}
+
+	void Copy(string name)
+	{
+		
+	}
+
 }

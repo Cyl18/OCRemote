@@ -21,30 +21,38 @@
     {
         timer.Elapsed += async (s, e) =>
         {
-            var request = JsonDocument.Parse(await RemoteManager.Request("return getEnergyStatus()")).RootElement.EnumerateArray().Select(x => x.GetString()).ToArray();
-
-
-            var used = Normalize(request[1]);
-            var total = Normalize(request[2]);
-            var avgin = Normalize(request[6]);
-            var avgout = Normalize(request[7]);
-            var uv = 524288;
-            var t = ((total) - (used)) / (avgin - avgout) / 20;
-            TimeSpan ts = TimeSpan.Zero;
-            bool failed = false;
             try
             {
-                ts = TimeSpan.FromSeconds((double) t);
+                
+                var request = JsonDocument.Parse(await RemoteManager.Request("return getEnergyStatus()")).RootElement.EnumerateArray().Select(x => x.GetString()).ToArray();
+
+
+                var used = Normalize(request[1]);
+                var total = Normalize(request[2]);
+                var avgin = Normalize(request[6]);
+                var avgout = Normalize(request[7]);
+                var uv = 524288;
+                var t = ((total) - (used)) / (avgin - avgout) / 20;
+                TimeSpan ts = TimeSpan.Zero;
+                bool failed = false;
+                try
+                {
+                    ts = TimeSpan.FromSeconds((double) t);
+                }
+                catch (Exception e1)
+                {
+                    failed = true;
+                }
+
+                energyStatus = $"存储：{used:N0} EU\n总存：{total:N0} EU\n5 秒内平均输入： {avgin:N0} EU/t ({avgin / uv} A UV)\n5 秒内平均输出：{avgout:N0} EU/t ({avgout / uv} A UV)\n" +
+                               $"需要 {(failed ? ((double)(t / 60 / 60) / 24.0).ToString("F1") + " 天" : ts.Humanize(culture: new CultureInfo("zh-Hans"), maxUnit: TimeUnit.Month, minUnit: TimeUnit.Second))} 就能填满";
+
+                InvokeAsync(StateHasChanged);
             }
             catch (Exception e1)
             {
-                failed = true;
+                Console.WriteLine(e1);
             }
-
-            energyStatus = $"存储：{used:N0} EU\n总存：{total:N0} EU\n5 秒内平均输入： {avgin:N0} EU/t ({avgin / uv} A UV)\n5 秒内平均输出：{avgout:N0} EU/t ({avgout / uv} A UV)\n" +
-                           $"需要 {(failed ? ((double)(t / 60 / 60) / 24.0).ToString("F1") + " 天" : ts.Humanize(culture: new CultureInfo("zh-Hans"), maxUnit: TimeUnit.Month, minUnit: TimeUnit.Second))} 就能填满";
-
-            InvokeAsync(StateHasChanged);
         };
         timer.Start();
     }
