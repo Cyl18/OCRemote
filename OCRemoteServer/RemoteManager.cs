@@ -1,12 +1,14 @@
-﻿using System.Collections.Concurrent;
+﻿using GammaLibrary.Extensions;
+using System.Collections.Concurrent;
+using System.Text.Json;
 
 namespace OCRemoteServer
 {
     public class RemoteManager
     {
-        internal static ConcurrentQueue<string> commandQueue = new();
-        static Dictionary<string, TaskCompletionSource<string>> handlers = new();
-        static Dictionary<string, DateTime> times = new();
+        internal static ConcurrentQueue<(int, string)> commandQueue = new();
+        static Dictionary<int, TaskCompletionSource<string>> handlers = new();
+        static Dictionary<int, DateTime> times = new();
         static int commandId = 0;
         static readonly object locker = new();
 
@@ -40,8 +42,8 @@ namespace OCRemoteServer
             lock (locker)
             {
                 commandId = (commandId + 1) % 1000;
-                var cId = commandId.ToString("D3");
-                commandQueue.Enqueue(cId + lua);
+                var cId = commandId;
+                commandQueue.Enqueue((cId, lua));
                 var tcs = new TaskCompletionSource<string>();
                 handlers[cId] = tcs;
                 return tcs.Task;
@@ -50,22 +52,24 @@ namespace OCRemoteServer
 
         public static void Callback(string response)
         {
+            var list = JsonSerializer.Deserialize<Dictionary<int, string>>(response);
             lock (locker)
             {
-                var cId = response.Substring(0, 3);
-                var reply = response.Substring(3);
-                var handler = handlers[cId];
-                handlers.Remove(cId);
-                if (reply.StartsWith("e$"))
+                foreach (var (k, v) in list)
                 {
-                    var error = response.Substring(2);
-                    handler.SetException(new Exception(error));
-
-                }
-                else
-                {
-                    handler.SetResult(reply);
-
+                    var cId = k;
+                    var reply = v;
+                    var handler = handlers[cId];
+                    handlers.Remove(cId);
+                    if (reply.StartsWith("e$"))
+                    {
+                        var error = response.Substring(2);
+                        handler.SetException(new Exception(error));
+                    }
+                    else
+                    {
+                        handler.SetResult(reply);
+                    }
                 }
             }
         }
