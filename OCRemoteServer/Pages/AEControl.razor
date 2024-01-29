@@ -10,7 +10,31 @@
 <BSToaster />
 
 <h3>AEControl</h3>
+
+@if (crafting)
+{
+    <BSCard CardType="CardType.Card" style="width: 24rem;">
+        <BSCard CardType="CardType.Body">
+            <BSLabel>合成 @itemName</BSLabel>
+            <BSInputGroup Size="Size.Medium" MarginBottom="Margins.Medium">
+
+                <span class="@BS.Input_Group_Text">数量</span>
+                <BSInput TValue="int" InputType="InputType.Number" @bind-Value="count" />
+
+            </BSInputGroup>
+
+        </BSCard>
+        <BSCard CardType="CardType.Footer">
+            <BSButton Color="BSColor.Primary" OnClick="() => SubmitCrafting()">合成</BSButton>
+            <BSButton Color="BSColor.Primary" OnClick="() => {crafting = false;}">取消</BSButton>
+        </BSCard>
+    </BSCard>
+
+}
+
 <h4>处理器状态</h4>
+
+<BSLabel>当前有 @idleCpus 个空闲 CPU</BSLabel>
 
 <BSTable IsResponsive="true" IsStriped="true">
 <BSTHead>
@@ -54,26 +78,7 @@
 </BSTBody>
 </BSTable>
 <h4>点菜</h4>
-@if (crafting)
-{
-    <BSCard CardType="CardType.Card" style="width: 24rem;">
-        <BSCard CardType="CardType.Body">
-            <BSLabel>合成 @itemName</BSLabel>
-            <BSInputGroup Size="Size.Medium" MarginBottom="Margins.Medium">
 
-                <span class="@BS.Input_Group_Text">数量</span>
-                <BSInput TValue="int" InputType="InputType.Number" @bind-Value="count" />
-
-            </BSInputGroup>
-
-        </BSCard>
-        <BSCard CardType="CardType.Footer">
-            <BSButton Color="BSColor.Primary" OnClick="() => SubmitCrafting()">合成</BSButton>
-            <BSButton Color="BSColor.Primary" OnClick="() => {crafting = false;}">取消</BSButton>
-        </BSCard>
-    </BSCard>
-
-}
     
 
 <table>
