@@ -390,6 +390,11 @@
                 var avgout = r.AvgOut;
                 var uv = 524288;
                 var t = ((total) - (used)) / (avgin - avgout) / 20;
+                if (t < 0)
+                {
+                    t = ((used)) / (avgin - avgout) / 20;
+
+                }
                 TimeSpan ts = TimeSpan.Zero;
                 bool failed = false;
                 try
