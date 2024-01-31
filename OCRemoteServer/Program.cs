@@ -25,7 +25,7 @@ builder.Services
     .AddBlazorise(options =>
     {
         options.Immediate = true;
-        options.ProductToken = File.ReadAllText("D:\\blazorise.txt").Trim();
+        options.ProductToken = File.ReadAllText("..\\blazorise.txt").Trim();
     })
     .AddBootstrap5Providers()
     .AddFontAwesomeIcons();

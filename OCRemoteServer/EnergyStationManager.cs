@@ -15,7 +15,7 @@ namespace OCRemoteServer
         public static ConcurrentQueue<ESReport> latestValue = new();
         public static void Init()
         {
-            if (!File.Exists("D:/OCRemote/es.db"))
+            if (!File.Exists("../es.db"))
             {
                 using var context = new MyDbContext();
                 context.Database.EnsureDeleted();
@@ -92,7 +92,7 @@ namespace OCRemoteServer
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite(@"DataSource=D:/OCRemote/es.db;");
+            optionsBuilder.UseSqlite(@"DataSource=../es.db;");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
