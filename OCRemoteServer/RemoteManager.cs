@@ -14,7 +14,7 @@ namespace OCRemoteServer
 
         public static async Task SyncCode()
         {
-            var dir = "Q:\\Alist\\OC";
+            var dir = "../OC";
             foreach (var file in Directory.GetFiles(dir))
             {
                 var text = File.ReadAllText(file);
