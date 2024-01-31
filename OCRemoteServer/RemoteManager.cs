@@ -24,7 +24,7 @@ namespace OCRemoteServer
 
         static RemoteManager()
         {
-            Task.Run(async () =>
+            Task.Factory.StartNew(async () =>
             {
                 try
                 {
@@ -52,13 +52,13 @@ namespace OCRemoteServer
 
                     await Task.Delay(TimeSpan.FromSeconds(1));
                 }
-            });
+            }, TaskCreationOptions.HideScheduler);
         }
 
         public static async void OnInitialized()
         {
             await SyncCode();
-
+            EnergyStationManager.Init();
         }
 
         public static Task<string> Request(string lua)
@@ -66,6 +66,7 @@ namespace OCRemoteServer
             lock (locker)
             {
                 commandId = (commandId + 1) % 1000;
+                Console.WriteLine($"{commandId}: {lua}");
                 var cId = commandId;
                 commandQueue.Enqueue((cId, lua));
                 var tcs = new TaskCompletionSource<string>();
@@ -84,7 +85,9 @@ namespace OCRemoteServer
                     var cId = k;
                     var reply = v;
                     var handler = handlers[cId];
-                    handlers.Remove(cId);
+                    handlers[cId] = null;
+                    if (handler == null) continue;
+                    
                     if (reply.StartsWith("e$"))
                     {
                         var error = response.Substring(2);

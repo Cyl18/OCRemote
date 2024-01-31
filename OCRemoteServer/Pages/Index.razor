@@ -5,6 +5,10 @@
 @using Humanizer
 @using System.Globalization
 @using Humanizer.Localisation
+@using Blazorise.Charts
+@using Blazorise.Charts.Streaming
+
+
 @implements IDisposable
 <PageTitle>Index</PageTitle>
 
@@ -12,10 +16,139 @@
 
 <div style="white-space: pre-line; line-height: 120%">@energyStatus</div>
 
+<LineChart Style="max-width: 70%; max-height: 300px; box-sizing:border-box" @ref="horizontalLineChart" TItem="LiveDataPoint" OptionsObject="@horizontalLineChartOptions">
+    <ChartStreaming TItem="LiveDataPoint"
+                    Options="new ChartStreamingOptions { Delay = 3500, FrameRate=60, Duration = 60000 }"
+                    Refreshed="@OnHorizontalLineRefreshed" />
+</LineChart>
+
 @code
 {
+
+    LineChart<LiveDataPoint> horizontalLineChart;
+    Random random = new Random(DateTime.Now.Millisecond);
+
+    string[] Labels = { "Red", "Blue", "Yellow", "Green", "Purple", "Orange" };
+    List<string> backgroundColors = new List<string> { ChartColor.FromRgba(255, 99, 132, 0.2f), ChartColor.FromRgba(54, 162, 235, 0.2f), ChartColor.FromRgba(255, 206, 86, 0.2f), ChartColor.FromRgba(75, 192, 192, 0.2f), ChartColor.FromRgba(153, 102, 255, 0.2f), ChartColor.FromRgba(255, 159, 64, 0.2f) };
+    List<string> borderColors = new List<string> { ChartColor.FromRgba(255, 99, 132, 1f), ChartColor.FromRgba(54, 162, 235, 1f), ChartColor.FromRgba(255, 206, 86, 1f), ChartColor.FromRgba(75, 192, 192, 1f), ChartColor.FromRgba(153, 102, 255, 1f), ChartColor.FromRgba(255, 159, 64, 1f) };
+
+    public struct LiveDataPoint
+    {
+        public object X { get; set; }
+
+        public object Y { get; set; }
+    }
+
+    object horizontalLineChartOptions = new
+    {
+        Scales = new
+        {
+            Y = new
+            {
+                Title = new
+                {
+                    Display = true,
+                    Text = "Value"
+                },
+                BeginAtZero = true
+            }
+        },
+        Interaction = new
+        {
+            intersect = false
+        }
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.WhenAll(
+                HandleRedraw(horizontalLineChart, GetLineChartDataset1, GetLineChartDataset2));
+        }
+    }
+
+    async Task HandleRedraw<TDataSet, TItem, TOptions, TModel>(BaseChart<TDataSet, TItem, TOptions, TModel> chart, params Func<TDataSet>[] getDataSets)
+        where TDataSet : ChartDataset<TItem>
+        where TOptions : ChartOptions
+        where TModel : ChartModel
+    {
+        await chart.Clear();
+
+        await chart.AddLabelsDatasetsAndUpdate(Labels, getDataSets.Select(x => x.Invoke()).ToArray());
+    }
+
+    LineChartDataset<LiveDataPoint> GetLineChartDataset1()
+    {
+        return new LineChartDataset<LiveDataPoint>
+            {
+                Data = new List<LiveDataPoint>(),
+                Label = "AvgIn (A UV)",
+                BackgroundColor = backgroundColors[0],
+                BorderColor = borderColors[0],
+                Fill = false,
+                Tension = 0,
+                BorderDash = new List<int> { 8, 4 },
+            };
+    }
+
+    LineChartDataset<LiveDataPoint> GetLineChartDataset2()
+    {
+        return new LineChartDataset<LiveDataPoint>
+        {
+            Data = new List<LiveDataPoint>(),
+            Label = "AvgOut (A UV)",
+            BackgroundColor = backgroundColors[1],
+            BorderColor = borderColors[1],
+            Fill = false,
+            Tension = 0,
+            BorderDash = new List<int> { 8, 4 },
+        };
+    }
+
+    Task OnHorizontalLineRefreshed(ChartStreamingData<LiveDataPoint> data)
+    {
+        try
+        {
+
+            var dr = EnergyStationManager.latestValue.ToArray();
+        
+
+            if (data.DatasetIndex == 0)
+            {
+
+                data.Value = new LiveDataPoint
+                {
+                    X = dr.Last().Date,
+                    Y = (long)(dr.Average(x => x.AvgIn) / 524288),
+                };   
+            }
+            else
+            {
+
+                data.Value = new LiveDataPoint
+                {
+                    X = dr.Last().Date,
+                    Y = (long)(dr.Average(x => x.AvgOut) / 524288),
+                };
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+
+        
+        return Task.CompletedTask;
+    }
+
+
+
+
     Timer timer = new Timer(1000);
     string energyStatus = "";
+
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -23,14 +156,13 @@
         {
             try
             {
-                
-                var request = JsonDocument.Parse(await RemoteManager.Request("return getEnergyStatus()")).RootElement.EnumerateArray().Select(x => x.GetString()).ToArray();
+                var r = EnergyStationManager.latestValue.Last();
 
 
-                var used = Normalize(request[1]);
-                var total = Normalize(request[2]);
-                var avgin = Normalize(request[6]);
-                var avgout = Normalize(request[7]);
+                var used = r.Used;
+                var total = r.Total;
+                var avgin = r.AvgIn;
+                var avgout = r.AvgOut;
                 var uv = 524288;
                 var t = ((total) - (used)) / (avgin - avgout) / 20;
                 TimeSpan ts = TimeSpan.Zero;
@@ -43,9 +175,11 @@
                 {
                     failed = true;
                 }
-
-                energyStatus = $"存储：{used:N0} EU\n总存：{total:N0} EU\n5 秒内平均输入： {avgin:N0} EU/t ({avgin / uv} A UV)\n5 秒内平均输出：{avgout:N0} EU/t ({avgout / uv} A UV)\n" +
-                               $"需要 {(failed ? ((double)(t / 60 / 60) / 24.0).ToString("F1") + " 天" : ts.Humanize(culture: new CultureInfo("zh-Hans"), maxUnit: TimeUnit.Month, minUnit: TimeUnit.Second))} 就能填满";
+                using var ctx = new MyDbContext();
+                var count = ctx.ESReports.Count();
+                energyStatus = $"Stored：{used:N0} EU ({used/total:P2})\nTotal：{total:N0} EU\nAvg In (5s)： {avgin:N0} EU/t ({avgin / uv:N0} A UV)\nAvg Out (5s)：{avgout:N0} EU/t ({avgout / uv:N0} A UV)\n" +
+                               $"Requires {(failed ? ((double)(t / 60 / 60) / 24.0).ToString("F1") + " days" : ts.Humanize(/*culture: new CultureInfo("zh-Hans"),*/ maxUnit: TimeUnit.Month, minUnit: TimeUnit.Second))} to be {(t > 0 ? "filled": "discharged")}\n"
+                               ;
 
                 InvokeAsync(StateHasChanged);
             }
@@ -55,7 +189,9 @@
             }
         };
         timer.Start();
+
     }
+
 
 
     BigInteger Normalize(string s)

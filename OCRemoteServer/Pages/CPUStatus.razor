@@ -54,8 +54,8 @@
 <h4>最终产物</h4>
 @if (LastItem != null)
 {
-    
-    <div class="image-container" >
+
+    <div class="image-container">
         <img src="/api/AE/@LastItem.ImagePath" width="64" height="64" alt="Image" />
         <div class="text-overlay">@LastItem.Chinese @(LastItem.SizeM)</div>
 
@@ -66,45 +66,45 @@
 <h4>正在合成</h4>
 
 <table>
-<tbody>
-@foreach (var row in crafting)
-{
-    <tr>
-@foreach (var i in row)
-{
-    <td>
-        <div class="image-container" >
-            <img src="/api/AE/@i.ImagePath" width="64" height="64" alt="Image" />
-            <div class="text-overlay">@i.Chinese @(i.SizeM)</div>
+    <tbody>
+        @foreach (var row in crafting)
+        {
+            <tr>
+                @foreach (var i in row)
+                {
+                    <td>
+                        <div class="image-container">
+                            <img src="/api/AE/@i.ImagePath" width="64" height="64" alt="Image" />
+                            <div class="text-overlay">@i.Chinese @(i.SizeM)</div>
 
-        </div>
-                    
-    </td>
-}
-    </tr>
-}
-</tbody>
+                        </div>
+
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
 </table>
 
 <h4>计划合成</h4>
 <table>
     <tbody>
         @foreach (var row in pending)
-    {
-        <tr>
+        {
+            <tr>
                 @foreach (var i in row)
-            {
-                <td>
-                    <div class="image-container">
-                        <img src="/api/AE/@i.ImagePath" width="64" height="64" alt="Image" />
-                        <div class="text-overlay">@i.Chinese @(i.SizeM)</div>
+                {
+                    <td>
+                        <div class="image-container">
+                            <img src="/api/AE/@i.ImagePath" width="64" height="64" alt="Image" />
+                            <div class="text-overlay">@i.Chinese @(i.SizeM)</div>
 
-                    </div>
+                        </div>
 
-                </td>
-            }
-        </tr>
-    }
+                    </td>
+                }
+            </tr>
+        }
     </tbody>
 </table>
 

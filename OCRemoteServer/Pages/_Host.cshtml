@@ -12,11 +12,20 @@
     <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
     <link href="css/site.css" rel="stylesheet" />
     <link href="OCRemoteServer.styles.css" rel="stylesheet" />
+    <link href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" rel="stylesheet">
+
+    <link href="_content/Blazorise/blazorise.css" rel="stylesheet" />
+    <link href="_content/Blazorise.Bootstrap5/blazorise.bootstrap5.css" rel="stylesheet" />
     <link rel="icon" type="image/png" href="favicon.png"/>
-    <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
+    
+    <script src="/chart.js"></script>
+    <script src="/luxon.js"></script>
+    <script src="/chartjs-adapter-luxon.js"></script>
+    <script src="/chartjs-plugin-streaming.js"></script>
+    <component type="typeof(HeadOutlet)" render-mode="Server" />
 </head>
 <body>
-    <component type="typeof(App)" render-mode="ServerPrerendered" />
+    <component type="typeof(App)" render-mode="Server" />
 
     <div id="blazor-error-ui">
         <environment include="Staging,Production">
@@ -31,7 +40,7 @@
 
     <script src="_framework/blazor.server.js"></script>
     <script src="_content/BlazorStrap/popper.min.js"></script>
-    <script src="_content/BlazorStrap/blazorstrap.js"></script>
+<script src="_content/BlazorStrap/blazorstrap.js"></script>
     <script src="site.js"></script>
 </body>
 </html>
