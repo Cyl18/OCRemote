@@ -94,7 +94,7 @@
             {
                 <td>
                     <div class="image-container" >
-                            <img src="/api/AE/@i.ImagePath" width="64" height="64" alt="Image" @onclick="() => Craft(i)" />
+                            <img src="/api/AE/@i.ImagePath" width="64" height="64" loading="lazy" alt="Image" @onclick="() => Craft(i)" />
                         <div class="text-overlay">@i.Chinese @(i.SizeM) @(i.IsCraftable ? "+" : "")</div>
 
                     </div>
