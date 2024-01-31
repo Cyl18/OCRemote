@@ -16,19 +16,33 @@
 
 <div style="white-space: pre-line; line-height: 120%">@energyStatus</div>
 
-<LineChart Style="max-width: 70%; max-height: 300px; box-sizing:border-box" @ref="horizontalLineChart" TItem="LiveDataPoint" OptionsObject="@horizontalLineChartOptions">
+<h3>Realtime Chart</h3>
+<LineChart Style="max-width: 85%; max-height: 260px; box-sizing:border-box" @ref="horizontalLineChart" TItem="LiveDataPoint" OptionsObject="@horizontalLineChartOptions">
     <ChartStreaming TItem="LiveDataPoint"
-                    Options="new ChartStreamingOptions { Delay = 3500, FrameRate=60, Duration = 60000 }"
+                    Options="new ChartStreamingOptions { Delay = 3500, FrameRate=60, Duration = 40000 }"
                     Refreshed="@OnHorizontalLineRefreshed" />
 </LineChart>
+<h3>Hourly Chart</h3>
+<LineChart Style="max-width: 85%; max-height: 260px; box-sizing:border-box" @ref="horizontalLineChart3" TItem="LiveDataPoint" OptionsObject="@horizontalLineChartOptions"
+           >
+
+</LineChart>
+<h3>Daily Chart</h3>
+<LineChart Style="max-width: 85%; max-height: 260px; box-sizing:border-box" @ref="horizontalLineChart2" TItem="LiveDataPoint" OptionsObject="@horizontalLineChartOptions"
+           >
+
+</LineChart>
+
+
 
 @code
 {
-
     LineChart<LiveDataPoint> horizontalLineChart;
+    LineChart<LiveDataPoint> horizontalLineChart2;
+    LineChart<LiveDataPoint> horizontalLineChart3;
     Random random = new Random(DateTime.Now.Millisecond);
 
-    string[] Labels = { "Red", "Blue", "Yellow", "Green", "Purple", "Orange" };
+    string[] Labels = { };
     List<string> backgroundColors = new List<string> { ChartColor.FromRgba(255, 99, 132, 0.2f), ChartColor.FromRgba(54, 162, 235, 0.2f), ChartColor.FromRgba(255, 206, 86, 0.2f), ChartColor.FromRgba(75, 192, 192, 0.2f), ChartColor.FromRgba(153, 102, 255, 0.2f), ChartColor.FromRgba(255, 159, 64, 0.2f) };
     List<string> borderColors = new List<string> { ChartColor.FromRgba(255, 99, 132, 1f), ChartColor.FromRgba(54, 162, 235, 1f), ChartColor.FromRgba(255, 206, 86, 1f), ChartColor.FromRgba(75, 192, 192, 1f), ChartColor.FromRgba(153, 102, 255, 1f), ChartColor.FromRgba(255, 159, 64, 1f) };
 
@@ -43,6 +57,15 @@
     {
         Scales = new
         {
+            X = new
+            {
+                type = "time",
+                time = new {
+                    displayFormats = new {
+                    quarter = "MMM YYYY"
+            }
+        }
+            },
             Y = new
             {
                 Title = new
@@ -56,6 +79,26 @@
         Interaction = new
         {
             intersect = false
+        },
+        Plugins = new
+        {
+            Zoom = new
+            {
+                Zoom = new
+                {
+                    wheel = new
+                    {
+                        Enabled = true,
+
+                    },
+                    Mode = "x"
+                },
+                Pan = new
+                {
+                    Enabled = true,
+                    Mode = "x"
+                }
+            }
         }
     };
 
@@ -64,7 +107,11 @@
         if (firstRender)
         {
             await Task.WhenAll(
-                HandleRedraw(horizontalLineChart, GetLineChartDataset1, GetLineChartDataset2));
+                HandleRedraw(horizontalLineChart, GetLineChartDataset1, GetLineChartDataset2),
+                HandleRedraw(horizontalLineChart2, GetLineChartDataset1_daily, GetLineChartDataset2_daily),
+                HandleRedraw(horizontalLineChart3, GetLineChartDataset1_hourly, GetLineChartDataset2_hourly)
+                
+                );
         }
     }
 
@@ -74,36 +121,209 @@
         where TModel : ChartModel
     {
         await chart.Clear();
-
         await chart.AddLabelsDatasetsAndUpdate(Labels, getDataSets.Select(x => x.Invoke()).ToArray());
     }
 
     LineChartDataset<LiveDataPoint> GetLineChartDataset1()
     {
+        var liveDataPoints = new List<LiveDataPoint>();
+        using var ctx = new MyDbContext();
+        foreach (var (avgIn, avgOut, used, total, wireless, dateTime) in ctx.ESReports.Where(x => (DateTime.Now.AddSeconds(-60) < x.Date)))
+        {
+            liveDataPoints.Add(new LiveDataPoint()
+            {
+                X = dateTime,
+                Y = (long)(avgIn / 524288),
+            });
+        }
+
         return new LineChartDataset<LiveDataPoint>
             {
-                Data = new List<LiveDataPoint>(),
+                Data = liveDataPoints,
                 Label = "AvgIn (A UV)",
-                BackgroundColor = backgroundColors[0],
-                BorderColor = borderColors[0],
+                BackgroundColor = backgroundColors[1],
+                BorderColor = borderColors[1],
                 Fill = false,
-                Tension = 0,
+                Tension = 0.5f,
                 BorderDash = new List<int> { 8, 4 },
             };
     }
 
     LineChartDataset<LiveDataPoint> GetLineChartDataset2()
     {
+        var liveDataPoints = new List<LiveDataPoint>();
+        using var ctx = new MyDbContext();
+        foreach (var (avgIn, avgOut, used, total, wireless, dateTime) in ctx.ESReports.Where(x => (DateTime.Now.AddSeconds(-60) < x.Date)))
+        {
+            liveDataPoints.Add(new LiveDataPoint()
+                {
+                    X = dateTime,
+                    Y = (long)(avgOut / 524288),
+                });
+        }
         return new LineChartDataset<LiveDataPoint>
         {
-            Data = new List<LiveDataPoint>(),
+            Data = liveDataPoints,
             Label = "AvgOut (A UV)",
+            BackgroundColor = backgroundColors[0],
+            BorderColor = borderColors[0],
+            Fill = false,
+            Tension = 0.5f,
+            BorderDash = new List<int> { 8, 4 },
+        };
+    }
+
+    LineChartDataset<LiveDataPoint> GetLineChartDataset1_daily()
+    {
+        var liveDataPoints = new List<LiveDataPoint>();
+        using var ctx = new MyDbContext();
+        var avger = new List<LiveDataPoint>();
+
+        foreach (var (avgIn, avgOut, used, total, wireless, dateTime) in ctx.ESReports.Where(x => (DateTime.Now.AddHours(-24) < x.Date)))
+        {
+            avger.Add((new LiveDataPoint()
+            {
+                X = dateTime,
+                Y = (long)(avgIn / 524288),
+            }));
+            if (avger.Count > 240)
+            {
+                liveDataPoints.Add(
+                    new LiveDataPoint()
+                    {
+                        X = avger[0].X,
+                        Y = (long)avger.Select(x => x.Y).OfType<long>().Average()
+                    }
+                    );
+                avger.Clear();
+
+            }
+        }
+
+        return new LineChartDataset<LiveDataPoint>
+        {
+            Data = liveDataPoints,
+            Label = "AvgIn (A UV)",
             BackgroundColor = backgroundColors[1],
             BorderColor = borderColors[1],
             Fill = false,
-            Tension = 0,
+            Tension = 0.5f,
             BorderDash = new List<int> { 8, 4 },
         };
+    }
+
+    LineChartDataset<LiveDataPoint> GetLineChartDataset2_daily()
+    {
+        var liveDataPoints = new List<LiveDataPoint>();
+        using var ctx = new MyDbContext();
+        var avger = new List<LiveDataPoint>();
+
+        foreach (var (avgIn, avgOut, used, total, wireless, dateTime) in ctx.ESReports.Where(x => (DateTime.Now.AddHours(-24) < x.Date)))
+        {
+            avger.Add((new LiveDataPoint()
+                {
+                    X = dateTime,
+                    Y = (long)(avgOut / 524288),
+                }));
+            if (avger.Count > 240)
+            {
+                liveDataPoints.Add(
+                    new LiveDataPoint()
+                    {
+                        X = avger[0].X,
+                            Y = (long)avger.Select(x => x.Y).OfType<long>().Average()
+                    }
+                    );
+                avger.Clear();
+
+            }
+        }
+        return new LineChartDataset<LiveDataPoint>
+        {
+            Data = liveDataPoints,
+            Label = "AvgOut (A UV)",
+            BackgroundColor = backgroundColors[0],
+            BorderColor = borderColors[0],
+            Fill = false,
+            Tension = 0.5f,
+            BorderDash = new List<int> { 8, 4 },
+        };
+    }
+    LineChartDataset<LiveDataPoint> GetLineChartDataset1_hourly()
+    {
+        var liveDataPoints = new List<LiveDataPoint>();
+        using var ctx = new MyDbContext();
+        var avger = new List<LiveDataPoint>();
+
+        foreach (var (avgIn, avgOut, used, total, wireless, dateTime) in ctx.ESReports.Where(x => (DateTime.Now.AddHours(-1) < x.Date)))
+        {
+            avger.Add((new LiveDataPoint()
+                {
+                    X = dateTime,
+                    Y = (long)(avgIn / 524288),
+                }));
+            if (avger.Count > 30)
+            {
+                liveDataPoints.Add(
+                    new LiveDataPoint()
+                        {
+                            X = avger[0].X,
+                            Y = (long)avger.Select(x => x.Y).OfType<long>().Average()
+                        }
+                    );
+                avger.Clear();
+
+            }
+        }
+
+        return new LineChartDataset<LiveDataPoint>
+            {
+                Data = liveDataPoints,
+                Label = "AvgIn (A UV)",
+                BackgroundColor = backgroundColors[1],
+                BorderColor = borderColors[1],
+                Fill = false,
+                Tension = 0.5f,
+                BorderDash = new List<int> { 8, 4 },
+            };
+    }
+
+    LineChartDataset<LiveDataPoint> GetLineChartDataset2_hourly()
+    {
+        var liveDataPoints = new List<LiveDataPoint>();
+        using var ctx = new MyDbContext();
+        var avger = new List<LiveDataPoint>();
+
+        foreach (var (avgIn, avgOut, used, total, wireless, dateTime) in ctx.ESReports.Where(x => (DateTime.Now.AddHours(-1) < x.Date)))
+        {
+            avger.Add((new LiveDataPoint()
+                {
+                    X = dateTime,
+                    Y = (long)(avgOut / 524288),
+                }));
+            if (avger.Count > 30)
+            {
+                liveDataPoints.Add(
+                    new LiveDataPoint()
+                        {
+                            X = avger[0].X,
+                            Y = (long)avger.Select(x => x.Y).OfType<long>().Average()
+                        }
+                    );
+                avger.Clear();
+
+            }
+        }
+        return new LineChartDataset<LiveDataPoint>
+            {
+                Data = liveDataPoints,
+                Label = "AvgOut (A UV)",
+                BackgroundColor = backgroundColors[0],
+                BorderColor = borderColors[0],
+                Fill = false,
+                Tension = 0.5f,
+                BorderDash = new List<int> { 8, 4 },
+            };
     }
 
     Task OnHorizontalLineRefreshed(ChartStreamingData<LiveDataPoint> data)
@@ -146,6 +366,7 @@
 
 
     Timer timer = new Timer(1000);
+    Timer timer2 = new Timer(60000);
     string energyStatus = "";
 
 
@@ -177,8 +398,8 @@
                 }
                 using var ctx = new MyDbContext();
                 var count = ctx.ESReports.Count();
-                energyStatus = $"Stored：{used:N0} EU ({used/total:P2})\nTotal：{total:N0} EU\nAvg In (5s)： {avgin:N0} EU/t ({avgin / uv:N0} A UV)\nAvg Out (5s)：{avgout:N0} EU/t ({avgout / uv:N0} A UV)\n" +
-                               $"Requires {(failed ? ((double)(t / 60 / 60) / 24.0).ToString("F1") + " days" : ts.Humanize(/*culture: new CultureInfo("zh-Hans"),*/ maxUnit: TimeUnit.Month, minUnit: TimeUnit.Second))} to be {(t > 0 ? "filled": "discharged")}\n"
+                energyStatus = $"Stored：{used:N0} EU ({used/total:P5})\nTotal：{total:N0} EU\nAvg In (5s)： {avgin:N0} EU/t ({avgin / uv:N0} A UV)\nAvg Out (5s)：{avgout:N0} EU/t ({avgout / uv:N0} A UV)\n" +
+                               $"Requires {(failed ? ((double)(t / 60 / 60) / 24.0).ToString("F1") + " days" : ts.Humanize(/*culture: new CultureInfo("zh-Hans"),*/ maxUnit: TimeUnit.Month, minUnit: TimeUnit.Second))} to be {(t > 0 ? "filled": "*discharged*")}\n"
                                ;
 
                 InvokeAsync(StateHasChanged);
@@ -189,32 +410,18 @@
             }
         };
         timer.Start();
-
-    }
-
-
-
-    BigInteger Normalize(string s)
-    {
-        var fi = s.SkipWhile(c => !char.IsNumber(c));
-        var l = new List<char>();
-        foreach (var c in fi)
+        timer2.Elapsed += (s, e) =>
         {
-            if (char.IsNumber(c))
-            {
-                l.Add(c);
-            } 
-            else if (c != ',')
-            {
-                break;
-            }
-        }
-        var s1 = new string(l.ToArray());
-        return BigInteger.Parse(s1);
+            HandleRedraw(horizontalLineChart2, GetLineChartDataset1_daily, GetLineChartDataset2_daily);
+            HandleRedraw(horizontalLineChart3, GetLineChartDataset1_hourly, GetLineChartDataset2_hourly);
+            InvokeAsync(StateHasChanged);
+        };
+        timer2.Start();
     }
 
     public void Dispose()
     {
         timer.Dispose();
+        timer2.Dispose();
     }
 }
