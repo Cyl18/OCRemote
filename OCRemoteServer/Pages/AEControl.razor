@@ -142,13 +142,13 @@
         {
             try
             {
-                var request = (await RemoteManager.Request("return GetAllCpuInfo()")).JsonDeserialize<CpuInfo[]>();
+                var request = (await RemoteManager.Request("return GetAllCpuInfo()").ConfigureAwait(false)).JsonDeserialize<CpuInfo[]>();
                 var i = 0;
                 foreach (var cpuInfo in request)
                 {
                     if (cpuInfo.Busy)
                     {
-                        var info = JsonDocument.Parse(await RemoteManager.Request($"return GetCpuInfo({i})")).RootElement.GetString();
+                        var info = JsonDocument.Parse(await RemoteManager.Request($"return GetCpuInfo({i})").ConfigureAwait(false)).RootElement.GetString();
                         var item = info.Split("^#^#")[3].JsonDeserialize<AEItem>();
                         cpuInfo.CraftingItem = item;
                     }
