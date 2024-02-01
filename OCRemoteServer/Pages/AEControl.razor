@@ -7,7 +7,6 @@
 @inject IJSRuntime js;
 @inject IBlazorStrap _blazorStrap
 @inject NavigationManager nav
-@implements IDisposable
 <BSToaster />
 
 <h3>AEControl</h3>
@@ -111,7 +110,6 @@
     bool crafting = false;
     List<AEItem[]> grid = new ();
     string itemName;
-    Timer timer = new Timer(4000);
     int count = 1;
     CpuInfo[] infos = new CpuInfo[0];
     int idleCpus = 0;
@@ -137,43 +135,50 @@
             grid.Add(line);
             items1 = items1.Skip(15);
         }
-
-        timer.Elapsed += async (s, e) =>
+        Task.Run(async () =>
         {
-            try
+            while (true)
             {
-                var request = (await RemoteManager.Request("return GetAllCpuInfo()").ConfigureAwait(false)).JsonDeserialize<CpuInfo[]>();
-                var i = 0;
-                foreach (var cpuInfo in request)
+                try
                 {
-                    if (cpuInfo.Busy)
+                    var request = (await RemoteManager.Request("return GetAllCpuInfo()").ConfigureAwait(false)).JsonDeserialize<CpuInfo[]>();
+                    var i = 0;
+                    foreach (var cpuInfo in request)
                     {
-                        var info = JsonDocument.Parse(await RemoteManager.Request($"return GetCpuInfo({i})").ConfigureAwait(false)).RootElement.GetString();
-                        var item = info.Split("^#^#")[3].JsonDeserialize<AEItem>();
-                        cpuInfo.CraftingItem = item;
+                    
+                        cpuInfo.ID = i++;
                     }
-                    cpuInfo.ID = i++;
+                    var tasks = new List<Task>();
+                    foreach (var cpuInfo in request)
+                    {
+                        tasks.Add(Task.Run(async () =>
+                        {
+                            if (cpuInfo.Busy)
+                            {
+                                var info = JsonDocument.Parse(await RemoteManager.Request($"return GetCpuInfo({cpuInfo.ID})").ConfigureAwait(false)).RootElement.GetString();
+                                var item = info.Split("^#^#")[3].JsonDeserialize<AEItem>();
+                                cpuInfo.CraftingItem = item;
+                            }
+                        }));
+                    }
+                    await Task.WhenAll(tasks);
+                    idleCpus = request.Count(x => !x.Busy);
+                    infos = request.Where(x => x.Busy).ToArray();
+
+
+                    InvokeAsync(StateHasChanged);
                 }
-                idleCpus = request.Count(x => !x.Busy);
-                infos = request.Where(x => x.Busy).ToArray();
-
-
-                InvokeAsync(StateHasChanged);
+                catch (Exception e1)
+                {
+                    Console.WriteLine(e1);
+                }
+                await Task.Delay(3000);
             }
-            catch (Exception e1)
-            {
-                Console.WriteLine(e1);
-            }
-        };
-        timer.Start();
+        });
 
     }
 
 
-    public void Dispose()
-    {
-        timer.Dispose();
-    }
     AEItem craftItem;
 
     async Task Craft(AEItem aeItem)
