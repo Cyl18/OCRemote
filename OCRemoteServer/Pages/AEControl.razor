@@ -32,8 +32,10 @@
 
 }
 
+
 <h4>处理器状态</h4>
 
+<BSButton Color="BSColor.Primary" OnClick="() => Refresh()">刷新</BSButton>
 <BSLabel>当前有 @idleCpus 个空闲 CPU</BSLabel>
 
 <BSTable IsResponsive="true" IsStriped="true">
@@ -135,47 +137,7 @@
             grid.Add(line);
             items1 = items1.Skip(15);
         }
-        Task.Run(async () =>
-        {
-            while (true)
-            {
-                try
-                {
-                    var request = (await RemoteManager.Request("return GetAllCpuInfo()").ConfigureAwait(false)).JsonDeserialize<CpuInfo[]>();
-                    var i = 0;
-                    foreach (var cpuInfo in request)
-                    {
-                    
-                        cpuInfo.ID = i++;
-                    }
-                    var tasks = new List<Task>();
-                    foreach (var cpuInfo in request)
-                    {
-                        tasks.Add(Task.Run(async () =>
-                        {
-                            if (cpuInfo.Busy)
-                            {
-                                var info = JsonDocument.Parse(await RemoteManager.Request($"return GetCpuInfo({cpuInfo.ID})").ConfigureAwait(false)).RootElement.GetString();
-                                var item = info.Split("^#^#")[3].JsonDeserialize<AEItem>();
-                                cpuInfo.CraftingItem = item;
-                            }
-                        }));
-                    }
-                    await Task.WhenAll(tasks);
-                    idleCpus = request.Count(x => !x.Busy);
-                    infos = request.Where(x => x.Busy).ToArray();
-
-
-                    InvokeAsync(StateHasChanged);
-                }
-                catch (Exception e1)
-                {
-                    Console.WriteLine(e1);
-                }
-                await Task.Delay(3000);
-            }
-        });
-
+        
     }
 
 
@@ -218,6 +180,43 @@
     void View(int xID)
     {
         nav.NavigateTo($"/cpustatus/{xID}");
+
+    }
+
+    async Task Refresh()
+    {
+        try
+        {
+            var request = (await RemoteManager.Request("return GetAllCpuInfo()").ConfigureAwait(false)).JsonDeserialize<CpuInfo[]>();
+            var i = 0;
+            foreach (var cpuInfo in request)
+            {
+                cpuInfo.ID = i++;
+            }
+            var tasks = new List<Task>();
+            foreach (var cpuInfo in request)
+            {
+                tasks.Add(Task.Run(async () =>
+                {
+                    if (cpuInfo.Busy)
+                    {
+                        var info = JsonDocument.Parse(await RemoteManager.Request($"return GetCpuInfo({cpuInfo.ID})").ConfigureAwait(false)).RootElement.GetString();
+                        var item = info.Split("^#^#")[3].JsonDeserialize<AEItem>();
+                        cpuInfo.CraftingItem = item;
+                    }
+                }));
+            }
+            await Task.WhenAll(tasks);
+            idleCpus = request.Count(x => !x.Busy);
+            infos = request.Where(x => x.Busy).ToArray();
+
+
+            InvokeAsync(StateHasChanged);
+        }
+        catch (Exception e1)
+        {
+            Console.WriteLine(e1);
+        }
 
     }
 
