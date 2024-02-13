@@ -22,9 +22,21 @@ namespace OCRemoteServer
                 context.Database.EnsureCreated();
 
             }
+
+            /*
+            using var ctx = new MyDbContext();
+            ctx.ESReports.RemoveRange(ctx.ESReports.Where(x => (DateTime.Now.AddMinutes(-180) < x.Date)));
+            ctx.SaveChanges();
+            Console.WriteLine("done");
+            return;*/
             Task.Run(async () =>
             {
-                var start = DateTime.Now; 
+                var start = DateTime.Now;
+                start:
+                var lastDate = start - TimeSpan.FromHours(1);
+                var lastUsed = new BigInteger();
+                var lastWireless = new BigInteger();
+                var lastDysonStore = new BigInteger();
                 while (true)
                 {
                     try
@@ -32,24 +44,65 @@ namespace OCRemoteServer
                         if (DateTime.Now.Second != start.Second)
                         {
                             using var ctx = new MyDbContext();
-                            var request = JsonDocument.Parse(await RemoteManager.Request("return getEnergyStatus()")).RootElement.EnumerateArray().Select(x => x.GetString()).ToArray();
+                            var storeR = RemoteManager.Request("return getStorageEnergyStatus()");
+                            var dateNow = DateTime.Now;
 
-                            
-                            var used = Normalize(request[1]);
-                            var total = Normalize(request[2]);
-                            var avgin = Normalize(request[6]);
-                            var avgout = Normalize(request[7]);
-                            var report = new ESReport((double)avgin,(double)avgout,(double)used,(double)total,0,DateTime.Now);
-                            if (latestValue.Count >= 5)
+                            var root = JsonDocument.Parse(await storeR).RootElement.EnumerateArray().ToArray();
+                            var store = root[0].EnumerateArray().Select(x => x.GetString()).ToArray();
+                            var in1 = root[1].EnumerateArray().Select(x => x.GetString()).ToArray(); // naq
+                            var in2 = root[2].EnumerateArray().Select(x => x.GetString()).ToArray(); // dyson
+
+
+                            var dysonStore = Normalize(in2[1]!);
+                            var used = Normalize(store[1]!) + dysonStore; // store 的
+                            var total = Normalize(store[2]!); // store 的
+                            var naqIn = Normalize(in1[6]!);
+                            var dysonIn = Normalize(in2[6]!);
+                            var wireless = Normalize(in2[14]!); // 无线存储
+
+                            var avgin = naqIn + dysonIn; // eu in
+                            var avgout = 0d; // 平均输出量
+
+                            if ((DateTime.Now - lastDate).TotalSeconds > 5)
+                            {
+                                goto end;
+                            }
+
+                            if ((double)dysonStore/(double)lastDysonStore < 0.7) // MAGIC
+                            {
+                                Thread.Sleep(5000);
+                                goto start;
+                            }
+
+                            if (latestValue.Count >= 50)
                             {
                                 latestValue.TryDequeue(out _);
                             }
 
-                            latestValue.Enqueue(report);
+                            var totalEUPrevious = lastUsed + lastWireless;
+                            var totalEUCurrent = used + wireless;
+                            var timeDelta = (dateNow - lastDate).TotalSeconds;
+                            var deltaInTick = ((double)(totalEUCurrent - totalEUPrevious) / (timeDelta * 20));
+                            var nReport = new ESReport((double)avgin, (double)avgin - deltaInTick, (double)used, (double)total, (double)wireless, DateTime.Now);
 
-                            ctx.ESReports.Add(report);
+                            var inUv = ((double) avgin) / 524288;
+                            var outUv = (deltaInTick) / 524288;
+                            Console.WriteLine($"in {inUv:N0} delta {outUv:N0}");
+
+                            latestValue.Enqueue(nReport);
+                            if (latestValue.Count > 10)
+                            {
+                                ctx.ESReports.Add(nReport);
+                            }
+
 
                             ctx.SaveChanges();
+                            end:
+                            lastWireless = wireless;
+                            lastUsed = used;
+                            lastDate = dateNow;
+                            lastDysonStore = dysonStore;
+
                             start = DateTime.Now;
                         }
                         else

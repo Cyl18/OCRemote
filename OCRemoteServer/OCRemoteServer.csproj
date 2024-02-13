@@ -8,6 +8,14 @@
 	  <UseRazorSourceGenerator>false</UseRazorSourceGenerator>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Blazorise.Bootstrap5" Version="1.4.2" />
     <PackageReference Include="Blazorise.Charts" Version="1.4.2" />

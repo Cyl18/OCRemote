@@ -14,7 +14,7 @@
 
 <h1>G T N H</h1>
 
-<div style="white-space: pre-line; line-height: 120%">@energyStatus</div>
+<div style="white-space: pre-line; line-height: 120%">@((MarkupString)energyStatus)</div>
 
 <h3>Realtime Chart</h3>
 <LineChart Style="max-width: 85%; max-height: 260px; box-sizing:border-box" @ref="horizontalLineChart" TItem="LiveDataPoint" OptionsObject="@horizontalLineChartOptions">
@@ -33,7 +33,11 @@
 
 </LineChart>
 
-
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
 
 @code
 {
@@ -381,19 +385,19 @@
         {
             try
             {
-                var r = EnergyStationManager.latestValue.Last();
+                var r = EnergyStationManager.latestValue;
 
 
-                var used = r.Used;
-                var total = r.Total;
-                var avgin = r.AvgIn;
-                var avgout = r.AvgOut;
+                var used = r.Average(x => x.Used);
+                var total = r.Average(x => x.Total);
+                var avgin = r.Average(x => x.AvgIn);
+                var avgout = r.Average(x => x.AvgOut);
                 var uv = 524288;
+
                 var t = ((total) - (used)) / (avgin - avgout) / 20;
                 if (t < 0)
                 {
                     t = ((used)) / (avgin - avgout) / 20;
-
                 }
                 TimeSpan ts = TimeSpan.Zero;
                 bool failed = false;
@@ -407,7 +411,12 @@
                 }
                 using var ctx = new MyDbContext();
                 var count = ctx.ESReports.Count();
-                energyStatus = $"Stored：{used:N0} EU ({used/total:P5})\nTotal：{total:N0} EU\nAvg In (5s)： {avgin:N0} EU/t ({avgin / uv:N0} A UV)\nAvg Out (5s)：{avgout:N0} EU/t ({avgout / uv:N0} A UV)\n" +
+                var wireless = EnergyStationManager.latestValue.Last().Wireless;
+                energyStatus = $"Wireless: <strong>{wireless:N0} EU ({wireless:g2})</strong>\n" +
+                               $"Stored：{used:N0} EU ({used/total:P5})\n" +
+                               $"Total：{total:N0} EU\n" +
+                               $"Avg In (5s)： {avgin:N0} EU/t ({avgin / uv:N0} A UV)\n" +
+                               $"Avg Out (5s)：{avgout:N0} EU/t ({avgout / uv:N0} A UV)\n" +
                                $"Requires {(failed ? ((double)(t / 60 / 60) / 24.0).ToString("F1") + " days" : ts.Humanize(/*culture: new CultureInfo("zh-Hans"),*/ maxUnit: TimeUnit.Month, minUnit: TimeUnit.Second))} to be {(t > 0 ? "filled": "*discharged*")}\n"
                                ;
 
