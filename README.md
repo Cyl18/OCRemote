@@ -2,6 +2,8 @@
 
 > 我家转为无线能源时代，修改了能量输入的计算方法，这部分改动放到另一条 git 分支
 
+我自己用的 GTNH [性能优化方案](docs/performance.md)
+
 ## 部署
 
 - 安装 rider 或 vs，.net 7 sdk
