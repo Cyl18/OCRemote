@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Reflection.Emit;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +26,7 @@ namespace OCRemoteServer
 
             /*
             using var ctx = new MyDbContext();
-            ctx.ESReports.RemoveRange(ctx.ESReports.Where(x => (DateTime.Now.AddMinutes(-180) < x.Date)));
+            ctx.ESReports.RemoveRange(ctx.ESReports.Where(x => (DateTime.Now.AddMinutes(-40) < x.Date)));
             ctx.SaveChanges();
             Console.WriteLine("done");
             return;*/
@@ -54,7 +55,8 @@ namespace OCRemoteServer
 
 
                             var dysonStore = Normalize(in2[1]!);
-                            var used = Normalize(store[1]!) + dysonStore; // store 的
+                            var syncStore = Normalize(in1[1]!);
+                            var used = Normalize(store[1]!) + dysonStore + syncStore; // store 的
                             var total = Normalize(store[2]!); // store 的
                             var naqIn = Normalize(in1[6]!);
                             var dysonIn = Normalize(in2[6]!);
@@ -68,9 +70,9 @@ namespace OCRemoteServer
                                 goto end;
                             }
 
-                            if ((double)dysonStore/(double)lastDysonStore < 0.7) // MAGIC
+                            if ((double)dysonStore/(double)lastDysonStore < 0.9 || (double)lastWireless / (double)wireless > 1.3) // MAGIC
                             {
-                                Thread.Sleep(5000);
+                                Thread.Sleep(10000);
                                 goto start;
                             }
 
@@ -87,6 +89,10 @@ namespace OCRemoteServer
 
                             var inUv = ((double) avgin) / 524288;
                             var outUv = (deltaInTick) / 524288;
+                            if (Math.Abs(outUv) > 12000000)
+                            {
+                                Debugger.Break();
+                            }
                             Console.WriteLine($"in {inUv:N0} delta {outUv:N0}");
 
                             latestValue.Enqueue(nReport);

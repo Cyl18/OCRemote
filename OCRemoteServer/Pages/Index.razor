@@ -233,11 +233,12 @@
                 }));
             if (avger.Count > 240)
             {
+                var avg = (long)avger.Select(x => x.Y).OfType<long>().Average();
                 liveDataPoints.Add(
                     new LiveDataPoint()
                     {
                         X = avger[0].X,
-                            Y = (long)avger.Select(x => x.Y).OfType<long>().Average()
+                            Y = avg < 0 ? 0 : avg
                     }
                     );
                 avger.Clear();
@@ -311,11 +312,13 @@
                 }));
             if (avger.Count > 30)
             {
+                var avg = (long)avger.Select(x => x.Y).OfType<long>().Average();
                 liveDataPoints.Add(
                     new LiveDataPoint()
                         {
                             X = avger[0].X,
-                            Y = (long)avger.Select(x => x.Y).OfType<long>().Average()
+                            Y = avg < 0 ? 0 : avg
+
                         }
                     );
                 avger.Clear();
