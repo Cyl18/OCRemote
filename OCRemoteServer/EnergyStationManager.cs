@@ -91,7 +91,9 @@ namespace OCRemoteServer
                             var outUv = (deltaInTick) / 524288;
                             if (Math.Abs(outUv) > 12000000)
                             {
-                                Debugger.Break();
+                                latestValue.Clear();
+                                Thread.Sleep(5000);
+                                goto start;
                             }
                             Console.WriteLine($"in {inUv:N0} delta {outUv:N0}");
 
