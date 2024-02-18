@@ -28,7 +28,7 @@ namespace OCRemoteServer
             {
                 try
                 {
-                    await Request("return 1");
+                    await Request("return 1").ConfigureAwait(false);
                     OnInitialized();
                 }
                 catch (Exception e)
@@ -52,13 +52,52 @@ namespace OCRemoteServer
 
                     await Task.Delay(TimeSpan.FromSeconds(1));
                 }
-            }, TaskCreationOptions.HideScheduler);
+            }, TaskCreationOptions.HideScheduler | TaskCreationOptions.LongRunning);
+
+          
+
         }
 
         public static async void OnInitialized()
         {
             await SyncCode();
             EnergyStationManager.Init();
+            Task.Factory.StartNew(async () =>
+            {
+                // Chtholly Plus Gaming PRO MAX Ti Ultra Super 2.0
+
+                var baseComponents = (await Get().ConfigureAwait(false)).ToHashSet();
+                while (true)
+                {
+                    try
+                    {
+                        var setBase = await Get().ConfigureAwait(false);
+                        var set = setBase.ToHashSet();
+                        set.ExceptWith(baseComponents);
+                        foreach (var (address, name) in set)
+                        {
+                            Console.WriteLine($"Component Added: [{address}]: {name}");
+                        }
+
+                        baseComponents = setBase;
+                        await Task.Delay(TimeSpan.FromSeconds(10));
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                }
+
+                async Task<HashSet<(string address, string name)>> Get()
+                {
+                    var componentJson = await RemoteManager.Request("return require('component').list()").ConfigureAwait(false);
+                    var components = JsonDocument.Parse(componentJson)
+                        .RootElement.EnumerateObject().Select(x => (address: x.Name, name: x.Value.GetString()!)).ToArray();
+                    return components.ToHashSet();
+                }
+
+            }, TaskCreationOptions.HideScheduler | TaskCreationOptions.LongRunning);
         }
 
         public static Task<string> Request(string lua)
