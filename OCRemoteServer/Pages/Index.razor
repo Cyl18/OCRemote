@@ -16,22 +16,41 @@
 
 <div style="white-space: pre-line; line-height: 120%">@((MarkupString)energyStatus)</div>
 
-<h3>Realtime Chart</h3>
-<LineChart Style="max-width: 85%; max-height: 260px; box-sizing:border-box" @ref="horizontalLineChart" TItem="LiveDataPoint" OptionsObject="@horizontalLineChartOptions">
-    <ChartStreaming TItem="LiveDataPoint"
-                    Options="new ChartStreamingOptions { Delay = 3500, FrameRate=60, Duration = 40000 }"
-                    Refreshed="@OnHorizontalLineRefreshed" />
-</LineChart>
-<h3>Hourly Chart</h3>
-<LineChart Style="max-width: 85%; max-height: 260px; box-sizing:border-box" @ref="horizontalLineChart3" TItem="LiveDataPoint" OptionsObject="@horizontalLineChartOptions"
-           >
+<BSTable>
+    <BSTBody>
+        <BSTR style="display: flex;">
+            <BSTD style="flex:1; box-sizing: border-box">
+                <h3>Realtime Chart</h3>
+                <LineChart Style="max-width: 100%; max-height: 260px; box-sizing:border-box" @ref="horizontalLineChart" TItem="LiveDataPoint" OptionsObject="@horizontalLineChartOptions">
+                    <ChartStreaming TItem="LiveDataPoint"
+                                    Options="new ChartStreamingOptions { Delay = 3500, FrameRate=60, Duration = 40000 }"
+                                    Refreshed="@OnHorizontalLineRefreshed" />
+                </LineChart>
+            </BSTD>
+            <BSTD style="flex:1; box-sizing: border-box">
+                <h3>Wireless Trend (3h)</h3>
+                <LineChart Style="max-width: 100%; max-height: 260px; box-sizing:border-box" @ref="wirelessChart" TItem="LiveDataPoint" OptionsObject="@wirelessChartOptions"/>
+            </BSTD>
 
-</LineChart>
-<h3>Daily Chart</h3>
-<LineChart Style="max-width: 85%; max-height: 260px; box-sizing:border-box" @ref="horizontalLineChart2" TItem="LiveDataPoint" OptionsObject="@horizontalLineChartOptions"
-           >
+        </BSTR>
+        <BSTR style="display: flex;">
 
-</LineChart>
+            <BSTD style="flex:1; box-sizing: border-box">
+                <h3>Hourly Chart</h3>
+                <LineChart Style="max-width: 100%; max-height: 260px; box-sizing:border-box" @ref="horizontalLineChart3" TItem="LiveDataPoint" OptionsObject="@horizontalLineChartOptions"
+                />
+            </BSTD>
+            <BSTD style="flex:1; box-sizing: border-box">
+                <h3>Daily Chart</h3>
+                <LineChart Style="max-width: 100%; max-height: 260px; box-sizing:border-box" @ref="horizontalLineChart2" TItem="LiveDataPoint" OptionsObject="@horizontalLineChartOptions"
+                />
+            </BSTD>
+        </BSTR>
+    </BSTBody>
+</BSTable>
+
+
+
 
 <br/>
 <br/>
@@ -44,6 +63,7 @@
     LineChart<LiveDataPoint> horizontalLineChart;
     LineChart<LiveDataPoint> horizontalLineChart2;
     LineChart<LiveDataPoint> horizontalLineChart3;
+    LineChart<LiveDataPoint> wirelessChart;
     Random random = new Random(DateTime.Now.Millisecond);
 
     string[] Labels = { };
@@ -106,6 +126,55 @@
         }
     };
 
+    object wirelessChartOptions = new
+    {
+        Scales = new
+        {
+            X = new
+            {
+                type = "time",
+                time = new {
+                    displayFormats = new {
+                        quarter = "MMM YYYY"
+                    }
+                }
+            },
+            Y = new
+            {
+                Title = new
+                {
+                    Display = true,
+                    Text = "Ah UV"
+                },
+                BeginAtZero = true
+            }
+        },
+        Interaction = new
+        {
+            intersect = false
+        },
+        Plugins = new
+        {
+            Zoom = new
+            {
+                Zoom = new
+                {
+                    wheel = new
+                    {
+                        Enabled = true,
+
+                    },
+                    Mode = "x"
+                },
+                Pan = new
+                {
+                    Enabled = true,
+                    Mode = "x"
+                }
+            }
+        }
+    };
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -113,10 +182,48 @@
             await Task.WhenAll(
                 HandleRedraw(horizontalLineChart, GetLineChartDataset1, GetLineChartDataset2),
                 HandleRedraw(horizontalLineChart2, GetLineChartDataset1_daily, GetLineChartDataset2_daily),
-                HandleRedraw(horizontalLineChart3, GetLineChartDataset1_hourly, GetLineChartDataset2_hourly)
+                HandleRedraw(horizontalLineChart3, GetLineChartDataset1_hourly, GetLineChartDataset2_hourly),
+                HandleRedraw(wirelessChart, GetWirelessDataset1)
                 
                 );
         }
+    }
+    LineChartDataset<LiveDataPoint> GetWirelessDataset1()
+    {
+        var liveDataPoints = new List<LiveDataPoint>();
+        using var ctx = new MyDbContext();
+        var avger = new List<LiveDataPoint>();
+
+        foreach (var (avgIn, avgOut, used, total, wireless, dateTime) in ctx.ESReports.Where(x => (DateTime.Now.AddHours(-3) < x.Date)))
+        {
+            avger.Add((new LiveDataPoint()
+            {
+                X = dateTime,
+                Y = (long)(wireless / 524288 / 3600 / 20),
+            }));
+            if (avger.Count > 50)
+            {
+                liveDataPoints.Add(
+                    new LiveDataPoint()
+                    {
+                        X = avger[0].X,
+                        Y = avger[0].Y
+                    }
+                    );
+                avger.Clear();
+            }
+        }
+
+        return new LineChartDataset<LiveDataPoint>
+        {
+            Data = liveDataPoints,
+            Label = "Ah UV",
+            BackgroundColor = backgroundColors[2],
+            BorderColor = borderColors[2],
+            Fill = false,
+            Tension = 0.5f,
+            BorderDash = new List<int> { 8, 4 },
+        };
     }
 
     async Task HandleRedraw<TDataSet, TItem, TOptions, TModel>(BaseChart<TDataSet, TItem, TOptions, TModel> chart, params Func<TDataSet>[] getDataSets)
@@ -190,7 +297,7 @@
                 X = dateTime,
                 Y = (long)(avgIn / 524288),
             }));
-            if (avger.Count > 240)
+            if (avger.Count > 240*1.5)
             {
                 liveDataPoints.Add(
                     new LiveDataPoint()
@@ -231,7 +338,7 @@
                     X = dateTime,
                     Y = (long)(avgOut / 524288),
                 }));
-            if (avger.Count > 240)
+            if (avger.Count > 240*1.5)
             {
                 var avg = (long)avger.Select(x => x.Y).OfType<long>().Average();
                 liveDataPoints.Add(
@@ -414,12 +521,13 @@
                 }
                 using var ctx = new MyDbContext();
                 var count = ctx.ESReports.Count();
+                var mainStorage = (double)EnergyStationManager.lastMainStorage;
                 var wireless = EnergyStationManager.latestValue.Last().Wireless;
-                energyStatus = $"Wireless: <strong>{wireless:N0} EU ({wireless:g2})</strong>\n" +
-                               $"Stored：{used:N0} EU ({used/total:P5})\n" +
-                               $"Total：{total:N0} EU\n" +
-                               $"Avg In (5s)： {avgin:N0} EU/t ({avgin / uv:N0} A UV)\n" +
-                               $"Avg Out (5s)：{avgout:N0} EU/t ({avgout / uv:N0} A UV)\n" +
+                energyStatus = $"Wireless: <strong>{wireless:N0} EU ({wireless:g2})</strong> ({wireless / 524288 / 3600 / 20:N0} Ah UV)\n" +
+                               $"Stored：{used:N0} EU ({used / total:P5}) <strong>({used / 524288 / 3600 / 20:N0} Ah UV)</strong>\n" +
+                               $"Main Storage：{mainStorage:N0} EU ({mainStorage / total:P5}) <strong>({mainStorage / 524288 / 3600 / 20:N0} Ah UV)</strong>\n" +
+                               $"Avg In (5s)： {avgin:N0} EU/t <strong>({avgin / uv:N0} A UV)</strong>\n" +
+                               $"Avg Out (5s)：{avgout:N0} EU/t <strong>({avgout / uv:N0} A UV)</strong>\n" +
                                $"Requires {(failed ? ((double)(t / 60 / 60) / 24.0).ToString("F1") + " days" : ts.Humanize(/*culture: new CultureInfo("zh-Hans"),*/ maxUnit: TimeUnit.Month, minUnit: TimeUnit.Second))} to be {(t > 0 ? "filled": "*discharged*")}\n"
                                ;
 
@@ -435,6 +543,7 @@
         {
             HandleRedraw(horizontalLineChart2, GetLineChartDataset1_daily, GetLineChartDataset2_daily);
             HandleRedraw(horizontalLineChart3, GetLineChartDataset1_hourly, GetLineChartDataset2_hourly);
+            HandleRedraw(wirelessChart, GetWirelessDataset1);
             InvokeAsync(StateHasChanged);
         };
         timer2.Start();

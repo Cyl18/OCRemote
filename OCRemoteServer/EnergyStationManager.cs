@@ -14,6 +14,7 @@ namespace OCRemoteServer
     public class EnergyStationManager
     {
         public static ConcurrentQueue<ESReport> latestValue = new();
+        public static BigInteger lastMainStorage;
         public static void Init()
         {
             if (!File.Exists("../es.db"))
@@ -48,15 +49,18 @@ namespace OCRemoteServer
                             var storeR = RemoteManager.Request("return getStorageEnergyStatus()");
                             var dateNow = DateTime.Now;
 
-                            var root = JsonDocument.Parse(await storeR).RootElement.EnumerateArray().ToArray();
-                            var store = root[0].EnumerateArray().Select(x => x.GetString()).ToArray();
-                            var in1 = root[1].EnumerateArray().Select(x => x.GetString()).ToArray(); // naq
-                            var in2 = root[2].EnumerateArray().Select(x => x.GetString()).ToArray(); // dyson
+                            var root = JsonDocument.Parse(await storeR).RootElement.EnumerateArray().ToArray()
+                                .Select(x => x.EnumerateArray().Select(x => x.GetString()).ToArray()).ToArray();
+                            var store = root[0];
+                            var in1 = root[1]; // naq
+                            var in2 = root[2]; // dyson
 
-
+                            lastMainStorage = Normalize(store[1]!);
                             var dysonStore = Normalize(in2[1]!);
                             var syncStore = Normalize(in1[1]!);
-                            var used = Normalize(store[1]!) + dysonStore + syncStore; // store 的
+                            //var used = Normalize(store[1]!) + dysonStore + syncStore; // store 的
+                            var used = root.Select(x => Normalize(x[1]!)).Aggregate((a, b) => a + b);
+
                             var total = Normalize(store[2]!); // store 的
                             var naqIn = Normalize(in1[6]!);
                             var dysonIn = Normalize(in2[6]!);
@@ -89,7 +93,7 @@ namespace OCRemoteServer
 
                             var inUv = ((double) avgin) / 524288;
                             var outUv = (deltaInTick) / 524288;
-                            if (Math.Abs(outUv) > 12000000)
+                            if (Math.Abs(outUv) > 15000000)
                             {
                                 latestValue.Clear();
                                 Thread.Sleep(5000);
