@@ -64,21 +64,17 @@ namespace OCRemoteServer
                             var total = Normalize(store[2]!); // store 的
                             var naqIn = Normalize(in1[6]!);
                             var dysonIn = Normalize(in2[6]!);
-                            var wireless = Normalize(in2[14]!); // 无线存储
+                            //var wireless = Normalize(root.Last()[14]!); // 无线存储
+                            var wireless = root.Select(x => Normalize(x[14]!)).Last(); // 无线存储
 
                             var avgin = naqIn + dysonIn; // eu in
-                            var avgout = 0d; // 平均输出量
 
                             if ((DateTime.Now - lastDate).TotalSeconds > 5)
                             {
                                 goto end;
                             }
 
-                            if ((double)dysonStore/(double)lastDysonStore < 0.9 || (double)lastWireless / (double)wireless > 1.3) // MAGIC
-                            {
-                                Thread.Sleep(10000);
-                                goto start;
-                            }
+
 
                             if (latestValue.Count >= 50)
                             {
@@ -95,11 +91,12 @@ namespace OCRemoteServer
                             var outUv = (deltaInTick) / 524288;
                             if (Math.Abs(outUv) > 15000000)
                             {
+                                Console.WriteLine($"in {inUv:N0} delta {outUv:N0}");
+
                                 latestValue.Clear();
-                                Thread.Sleep(5000);
-                                goto start;
+                                // Thread.Sleep(5000);
+                                // goto start;
                             }
-                            Console.WriteLine($"in {inUv:N0} delta {outUv:N0}");
 
                             latestValue.Enqueue(nReport);
                             if (latestValue.Count > 10)

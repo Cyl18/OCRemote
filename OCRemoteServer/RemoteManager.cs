@@ -105,7 +105,7 @@ namespace OCRemoteServer
             lock (locker)
             {
                 commandId = (commandId + 1) % 1000;
-                Console.WriteLine($"{commandId}: {lua}");
+                //Console.WriteLine($"{commandId}: {lua}");
                 var cId = commandId;
                 commandQueue.Enqueue((cId, lua));
                 var tcs = new TaskCompletionSource<string>();
