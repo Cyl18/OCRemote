@@ -95,7 +95,7 @@
                 Title = new
                 {
                     Display = true,
-                    Text = "A UV"
+                    Text = "A MAX"
                 },
                 BeginAtZero = true
             }
@@ -144,9 +144,9 @@
                 Title = new
                 {
                     Display = true,
-                    Text = "Ah UV"
+                    Text = "Ah MAX"
                 },
-                BeginAtZero = true
+                BeginAtZero = false
             }
         },
         Interaction = new
@@ -199,7 +199,7 @@
             avger.Add((new LiveDataPoint()
             {
                 X = dateTime,
-                Y = (long)(wireless / 524288 / 3600 / 20),
+                Y = (long)(wireless / 2147483600 / 3600 / 20),
             }));
             if (avger.Count > 50)
             {
@@ -217,7 +217,7 @@
         return new LineChartDataset<LiveDataPoint>
         {
             Data = liveDataPoints,
-            Label = "Ah UV",
+            Label = "Ah MAX",
             BackgroundColor = backgroundColors[2],
             BorderColor = borderColors[2],
             Fill = false,
@@ -244,14 +244,14 @@
             liveDataPoints.Add(new LiveDataPoint()
             {
                 X = dateTime,
-                Y = (long)(avgIn / 524288),
+                Y = (long)(avgIn / 2147483600),
             });
         }
 
         return new LineChartDataset<LiveDataPoint>
             {
                 Data = liveDataPoints,
-                Label = "AvgIn (A UV)",
+                Label = "AvgIn (A MAX)",
                 BackgroundColor = backgroundColors[1],
                 BorderColor = borderColors[1],
                 Fill = false,
@@ -269,13 +269,13 @@
             liveDataPoints.Add(new LiveDataPoint()
                 {
                     X = dateTime,
-                    Y = (long)(avgOut / 524288),
+                    Y = (long)(avgOut / 2147483600),
                 });
         }
         return new LineChartDataset<LiveDataPoint>
         {
             Data = liveDataPoints,
-            Label = "AvgOut (A UV)",
+            Label = "AvgOut (A MAX)",
             BackgroundColor = backgroundColors[0],
             BorderColor = borderColors[0],
             Fill = false,
@@ -295,7 +295,7 @@
             avger.Add((new LiveDataPoint()
             {
                 X = dateTime,
-                Y = (long)(avgIn / 524288),
+                Y = (long)(avgIn / 2147483600),
             }));
             if (avger.Count > 240*1.5)
             {
@@ -314,7 +314,7 @@
         return new LineChartDataset<LiveDataPoint>
         {
             Data = liveDataPoints,
-            Label = "AvgIn (A UV)",
+            Label = "AvgIn (A MAX)",
             BackgroundColor = backgroundColors[1],
             BorderColor = borderColors[1],
             PointRadius = 0,
@@ -336,7 +336,7 @@
             avger.Add((new LiveDataPoint()
                 {
                     X = dateTime,
-                    Y = (long)(avgOut / 524288),
+                    Y = (long)(avgOut / 2147483600),
                 }));
             if (avger.Count > 240*1.5)
             {
@@ -355,7 +355,7 @@
         return new LineChartDataset<LiveDataPoint>
         {
             Data = liveDataPoints,
-            Label = "AvgOut (A UV)",
+            Label = "AvgOut (A MAX)",
             BackgroundColor = backgroundColors[0],
             BorderColor = borderColors[0],
             PointRadius = 0,
@@ -376,7 +376,7 @@
             avger.Add((new LiveDataPoint()
                 {
                     X = dateTime,
-                    Y = (long)(avgIn / 524288),
+                    Y = (long)(avgIn / 2147483600),
                 }));
             if (avger.Count > 30)
             {
@@ -395,7 +395,7 @@
         return new LineChartDataset<LiveDataPoint>
             {
                 Data = liveDataPoints,
-                Label = "AvgIn (A UV)",
+                Label = "AvgIn (A MAX)",
                 BackgroundColor = backgroundColors[1],
                 BorderColor = borderColors[1],
                 Fill = false,
@@ -415,7 +415,7 @@
             avger.Add((new LiveDataPoint()
                 {
                     X = dateTime,
-                    Y = (long)(avgOut / 524288),
+                    Y = (long)(avgOut / 2147483600),
                 }));
             if (avger.Count > 30)
             {
@@ -435,7 +435,7 @@
         return new LineChartDataset<LiveDataPoint>
             {
                 Data = liveDataPoints,
-                Label = "AvgOut (A UV)",
+                Label = "AvgOut (A MAX)",
                 BackgroundColor = backgroundColors[0],
                 BorderColor = borderColors[0],
                 Fill = false,
@@ -458,7 +458,7 @@
                 data.Value = new LiveDataPoint
                 {
                     X = dr.Last().Date,
-                    Y = (long)(dr.Average(x => x.AvgIn) / 524288),
+                    Y = (long)(dr.Average(x => x.AvgIn) / 2147483600),
                 };   
             }
             else
@@ -467,7 +467,7 @@
                 data.Value = new LiveDataPoint
                 {
                     X = dr.Last().Date,
-                    Y = (long)(dr.Average(x => x.AvgOut) / 524288),
+                    Y = (long)(dr.Average(x => x.AvgOut) / 2147483600),
                 };
             }
         }
@@ -502,7 +502,7 @@
                 var total = r.Average(x => x.Total);
                 var avgin = r.Average(x => x.AvgIn);
                 var avgout = r.Average(x => x.AvgOut);
-                var uv = 524288;
+                var MAX = 2147483600;
 
                 var t = ((total) - (used)) / (avgin - avgout) / 20;
                 if (t < 0)
@@ -523,11 +523,11 @@
                 var count = ctx.ESReports.Count();
                 var mainStorage = (double)EnergyStationManager.lastMainStorage;
                 var wireless = EnergyStationManager.latestValue.Last().Wireless;
-                energyStatus = $"Wireless: <strong>{wireless:N0} EU ({wireless:g2})</strong> ({wireless / 524288 / 3600 / 20:N0} Ah UV)\n" +
-                               $"Stored：{used:N0} EU ({used / total:P5}) <strong>({used / 524288 / 3600 / 20:N0} Ah UV)</strong>\n" +
-                               $"Main Storage：{mainStorage:N0} EU ({mainStorage / total:P5}) <strong>({mainStorage / 524288 / 3600 / 20:N0} Ah UV)</strong>\n" +
-                               $"Avg In (5s)： {avgin:N0} EU/t <strong>({avgin / uv:N0} A UV)</strong>\n" +
-                               $"Avg Out (5s)：{avgout:N0} EU/t <strong>({avgout / uv:N0} A UV)</strong>\n" +
+                energyStatus = $"Wireless: <strong>{wireless:N0} EU ({wireless:g2})</strong> ({wireless / 2147483600 / 3600 / 20:N0} Ah MAX)\n" +
+                               $"Stored：{used:N0} EU ({used / total:P5}) <strong>({used / 2147483600 / 3600 / 20:N0} Ah MAX)</strong>\n" +
+                               $"Main Storage：{mainStorage:N0} EU ({mainStorage / total:P5}) <strong>({mainStorage / 2147483600 / 3600 / 20:N0} Ah MAX)</strong>\n" +
+                               $"Avg In (5s)： {avgin:N0} EU/t <strong>({avgin / MAX:N0} A MAX)</strong>\n" +
+                               $"Avg Out (5s)：{avgout:N0} EU/t <strong>({avgout / MAX:N0} A MAX)</strong>\n" +
                                $"Requires {(failed ? ((double)(t / 60 / 60) / 24.0).ToString("F1") + " days" : ts.Humanize(/*culture: new CultureInfo("zh-Hans"),*/ maxUnit: TimeUnit.Month, minUnit: TimeUnit.Second))} to be {(t > 0 ? "filled": "*discharged*")}\n"
                                ;
 

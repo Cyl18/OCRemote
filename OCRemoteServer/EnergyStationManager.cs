@@ -38,7 +38,7 @@ namespace OCRemoteServer
                 var lastDate = start - TimeSpan.FromHours(1);
                 var lastUsed = new BigInteger();
                 var lastWireless = new BigInteger();
-                var lastDysonStore = new BigInteger();
+                string?[][]? lastRoot = null;
                 while (true)
                 {
                     try
@@ -89,13 +89,19 @@ namespace OCRemoteServer
 
                             var inUv = ((double) avgin) / 524288;
                             var outUv = (deltaInTick) / 524288;
-                            if (Math.Abs(outUv) > 15000000)
+                            if (Math.Abs(outUv) > 70000000)
                             {
-                                Console.WriteLine($"in {inUv:N0} delta {outUv:N0}");
+                                Console.Clear();
+                                Console.WriteLine($"\nin {inUv:N0} delta {outUv:N0} lastwireless {lastWireless/524288/3600/20} wireless {wireless/524288/3600/20} delta {(wireless-lastWireless) / 524288 / 3600 / 20} ");
+                                for (int i = 0; i < 6; i++)
+                                {
+                                    var nn = Normalize(root[i][1]) / 524288 / 3600 / 20;
+                                    var nn2 = Normalize(lastRoot[i][1]) / 524288 / 3600 / 20;
+                                    Console.WriteLine($"i{i} {nn} {nn2} delta{nn2-nn}");
+                                }
 
-                                latestValue.Clear();
-                                // Thread.Sleep(5000);
-                                // goto start;
+                                //Thread.Sleep(5000);
+                                //goto start;
                             }
 
                             latestValue.Enqueue(nReport);
@@ -106,12 +112,11 @@ namespace OCRemoteServer
 
 
                             ctx.SaveChanges();
+                            lastRoot = root;
                             end:
                             lastWireless = wireless;
                             lastUsed = used;
                             lastDate = dateNow;
-                            lastDysonStore = dysonStore;
-
                             start = DateTime.Now;
                         }
                         else
