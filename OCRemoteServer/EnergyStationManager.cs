@@ -93,10 +93,12 @@ namespace OCRemoteServer
                             {
                                 Console.Clear();
                                 Console.WriteLine($"\nin {inUv:N0} delta {outUv:N0} lastwireless {lastWireless/524288/3600/20} wireless {wireless/524288/3600/20} delta {(wireless-lastWireless) / 524288 / 3600 / 20} ");
-                                for (int i = 0; i < 6; i++)
+                                for (int i = 0; i < root.Length; i++)
                                 {
-                                    var nn = Normalize(root[i][1]) / 524288 / 3600 / 20;
-                                    var nn2 = Normalize(lastRoot[i][1]) / 524288 / 3600 / 20;
+                                    var s = root[i][1];
+                                    var s1 = lastRoot[i][1];
+                                    var nn = Normalize(s) / 524288 / 3600 / 20;
+                                    var nn2 = Normalize(s1) / 524288 / 3600 / 20;
                                     Console.WriteLine($"i{i} {nn} {nn2} delta{nn2-nn}");
                                 }
 
