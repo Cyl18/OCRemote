@@ -56,8 +56,6 @@ namespace OCRemoteServer
                             var in2 = root[2]; // dyson
 
                             lastMainStorage = Normalize(store[1]!);
-                            var dysonStore = Normalize(in2[1]!);
-                            var syncStore = Normalize(in1[1]!);
                             //var used = Normalize(store[1]!) + dysonStore + syncStore; // store 的
                             var used = root.Select(x => Normalize(x[1]!)).Aggregate((a, b) => a + b);
 
