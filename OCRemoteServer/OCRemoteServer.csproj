@@ -30,6 +30,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.15" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.15" />
     <PackageReference Include="PininSharp" Version="1.2.0" />
+    <PackageReference Include="Sisters.WudiLib" Version="0.4.2-alpha2" />
+    <PackageReference Include="Sisters.WudiLib.WebSocket" Version="0.2.1" />
 
   </ItemGroup>
 

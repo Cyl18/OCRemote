@@ -80,7 +80,10 @@ namespace OCRemoteServer
                         }
 
                         baseComponents = setBase;
-                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        
+                        await Task.Delay(TimeSpan.FromSeconds(5));
+                        await AECraftingMonitor.Refresh();
+                        await Task.Delay(TimeSpan.FromSeconds(5));
 
                     }
                     catch (Exception e)

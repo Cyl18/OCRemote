@@ -39,6 +39,10 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
 }
 
+if (Directory.Exists("C:\\Users\\cyl18"))
+{
+    await QQBotModule.Init();
+}
 
 app.UseStaticFiles();
 

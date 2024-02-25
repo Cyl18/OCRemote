@@ -92,6 +92,41 @@ namespace OCRemoteServer
         public Guid Guid { get; } = Guid.NewGuid();
         [JsonIgnore]
         public string SizeM => ((double)Size).ToMetric(decimals: 1);
+
+        protected bool Equals(AEItem other)
+        {
+            return Label == other.Label && Damage == other.Damage && Name == other.Name;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((AEItem) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = Label.GetHashCode();
+                hashCode = (hashCode * 397) ^ Damage;
+                hashCode = (hashCode * 397) ^ Size.GetHashCode();
+                hashCode = (hashCode * 397) ^ Name.GetHashCode();
+                return hashCode;
+            }
+        }
+
+        public static bool operator ==(AEItem? left, AEItem? right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(AEItem? left, AEItem? right)
+        {
+            return !Equals(left, right);
+        }
     }
 
     public partial class CpuInfo
