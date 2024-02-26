@@ -63,7 +63,7 @@ namespace OCRemoteServer
                         {
                             await QQBotModule.Push(
                                 $"物品: [{plan.OutputItem.SizeM}x{plan.OutputItem.Chinese}] 合成完成，" +
-                                $"用时{(DateTime.Now - plan.StartTime).Humanize(precision: 2, minUnit: TimeUnit.Second, maxUnit: TimeUnit.Hour, culture: new CultureInfo("zh-Hans"))}。");
+                                $"用时{(DateTime.Now - plan.StartTime).Humanize(precision: 2, minUnit: TimeUnit.Second, maxUnit: TimeUnit.Hour, culture: new CultureInfo("zh-Hans"))}。", plan.StartTime);
                         }
                     }
                 }
@@ -72,7 +72,7 @@ namespace OCRemoteServer
                 {
                     paperList.Add(plan);
                     await QQBotModule.Push(
-                        $"集合物品: [{plan.OutputItem.SizeM.ToUpper()}x{plan.OutputItem.Label}] 合成完成，用时{(DateTime.Now - plan.StartTime).Humanize(precision: 2, minUnit: TimeUnit.Second, maxUnit: TimeUnit.Hour, culture: new CultureInfo("zh-Hans"))}。");
+                        $"集合物品: [{plan.OutputItem.SizeM.ToUpper()}x{plan.OutputItem.Label}] 合成完成，用时{(DateTime.Now - plan.StartTime).Humanize(precision: 2, minUnit: TimeUnit.Second, maxUnit: TimeUnit.Hour, culture: new CultureInfo("zh-Hans"))}。", plan.StartTime);
                 }
             }
 

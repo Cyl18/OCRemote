@@ -522,8 +522,8 @@
                 using var ctx = new MyDbContext();
 
                 var hourTrend = Trend(DateTime.Now.AddHours(-1));
-                var minuteTrend = Trend(DateTime.Now.AddMinutes(-1));
-                var minute10Trend = Trend(DateTime.Now.AddMinutes(-10));
+                var minuteTrend = Trend(DateTime.Now.AddMinutes(-3));
+                var minute10Trend = Trend(DateTime.Now.AddMinutes(-20));
                 string Trend(DateTime span)
                 {
                     var reports = ctx.ESReports.Where(x => (span < x.Date));
@@ -531,7 +531,23 @@
                     var avgOuts = reports.Select(x => x.AvgOut).Average();
                     var total = r.Last().Total + r.Last().Wireless;
                     var delta = avgIns - avgOuts;
-                    if (delta > 0) return "N/A";
+                    var reportsSortByTime = reports.OrderBy(x => x.Date);
+                    var first = reportsSortByTime.First();
+                    var last = reportsSortByTime.Last();
+
+                    var totalHours = (last.Date - first.Date).TotalHours;
+                    
+                    var firstWireless = reportsSortByTime.Take(100).Select(x => x.Wireless).Average();
+                    var lastWireless = reportsSortByTime.Skip(reports.Count() - 100).Select(x => x.Wireless).Average();
+                    var wirelessDelta = (lastWireless - firstWireless) / 2147483640 / 3600 / 20 / totalHours;
+                   
+                    
+                    
+                    if (delta > 0 && wirelessDelta > 0) return $"+{wirelessDelta:N1} Ah MAX/h";
+                    if (delta > 0)
+                    {
+                        return "N/A";
+                    }
                     delta = -delta;
                     var tt = total / delta / 20;
                     return TimeSpan.FromSeconds(tt).Humanize(maxUnit: TimeUnit.Day, minUnit: TimeUnit.Second, precision: 2);
@@ -544,7 +560,7 @@
                                $"Main Storage：{mainStorage:N0} EU <strong>({mainStorage / 2147483600 / 3600 / 20:N0} Ah MAX)</strong>\n" +
                                $"Avg In (5s)： {avgin:N0} EU/t <strong>({avgin / MAX:N0} A MAX)</strong>\n" +
                                $"Avg Out (5s)：{avgout:N0} EU/t <strong>({avgout / MAX:N0} A MAX)</strong>\n" +
-                               $"Loss Trend: [1min: {minuteTrend}] [10min: {minute10Trend}] [1h: {hourTrend}]\n"
+                               $"Trend: [3min: {minuteTrend}] [20min: {minute10Trend}] [1h: {hourTrend}]\n"
                                ;
 
                 InvokeAsync(StateHasChanged);

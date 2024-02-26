@@ -112,7 +112,6 @@ namespace OCRemoteServer
             {
                 var hashCode = Label.GetHashCode();
                 hashCode = (hashCode * 397) ^ Damage;
-                hashCode = (hashCode * 397) ^ Size.GetHashCode();
                 hashCode = (hashCode * 397) ^ Name.GetHashCode();
                 return hashCode;
             }
