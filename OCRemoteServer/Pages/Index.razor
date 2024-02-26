@@ -7,6 +7,7 @@
 @using Humanizer.Localisation
 @using Blazorise.Charts
 @using Blazorise.Charts.Streaming
+@using BlazorStrap
 
 
 @implements IDisposable
@@ -15,7 +16,19 @@
 <h1>G T N H</h1>
 
 <div style="white-space: pre-line; line-height: 120%">@((MarkupString)energyStatus)</div>
-
+<BSContainer>
+<BSRow Justify="Justify.Start">
+    <BSCol Column="1">
+            <BSLabel>Smooth scale</BSLabel>
+    </BSCol>
+    <BSCol Column="4">
+        <input class="form-range" type="range" value="@scale" @oninput="(x) => Refresh(Convert.ToDouble(x.Value))" step="0.5" min="1.5" max="250" />
+    </BSCol>
+    <BSCol Column="1">
+        <BSLabel>@(scale.ToString("N1"))</BSLabel>
+    </BSCol>
+</BSRow>
+</BSContainer>
 <BSTable>
     <BSTBody>
         <BSTR style="display: flex;">
@@ -65,6 +78,7 @@
     LineChart<LiveDataPoint> horizontalLineChart3;
     LineChart<LiveDataPoint> wirelessChart;
     Random random = new Random(DateTime.Now.Millisecond);
+    double scale = Math.E;
 
     string[] Labels = { };
     List<string> backgroundColors = new List<string> { ChartColor.FromRgba(255, 99, 132, 0.2f), ChartColor.FromRgba(54, 162, 235, 0.2f), ChartColor.FromRgba(255, 206, 86, 0.2f), ChartColor.FromRgba(75, 192, 192, 0.2f), ChartColor.FromRgba(153, 102, 255, 0.2f), ChartColor.FromRgba(255, 159, 64, 0.2f) };
@@ -123,6 +137,10 @@
                     Mode = "x"
                 }
             }
+        },
+        Animation = new
+        {
+            Duration = 0
         }
     };
 
@@ -172,6 +190,10 @@
                     Mode = "x"
                 }
             }
+        },
+        Animation = new
+        {
+            Duration = 0
         }
     };
 
@@ -201,7 +223,7 @@
                 X = dateTime,
                 Y = (long)(wireless / 2147483600 / 3600 / 20),
             }));
-            if (avger.Count > 50)
+            if (avger.Count > 50 * Math.Log(scale))
             {
                 liveDataPoints.Add(
                     new LiveDataPoint()
@@ -297,7 +319,7 @@
                 X = dateTime,
                 Y = (long)(avgIn / 2147483600),
             }));
-            if (avger.Count > 240*1.5)
+            if (avger.Count > 240 * 1.5 * Math.Log(scale))
             {
                 liveDataPoints.Add(
                     new LiveDataPoint()
@@ -338,7 +360,7 @@
                     X = dateTime,
                     Y = (long)(avgOut / 2147483600),
                 }));
-            if (avger.Count > 240*1.5)
+            if (avger.Count > 240 * 1.5 * Math.Log(scale))
             {
                 var avg = (long)avger.Select(x => x.Y).OfType<long>().Average();
                 liveDataPoints.Add(
@@ -378,7 +400,7 @@
                     X = dateTime,
                     Y = (long)(avgIn / 2147483600),
                 }));
-            if (avger.Count > 30)
+            if (avger.Count > 30 * Math.Log(scale))
             {
                 liveDataPoints.Add(
                     new LiveDataPoint()
@@ -417,7 +439,7 @@
                     X = dateTime,
                     Y = (long)(avgOut / 2147483600),
                 }));
-            if (avger.Count > 30)
+            if (avger.Count > 30 * Math.Log(scale))
             {
                 var avg = (long)avger.Select(x => x.Y).OfType<long>().Average();
                 liveDataPoints.Add(
@@ -573,10 +595,7 @@
         timer.Start();
         timer2.Elapsed += (s, e) =>
         {
-            HandleRedraw(horizontalLineChart2, GetLineChartDataset1_daily, GetLineChartDataset2_daily);
-            HandleRedraw(horizontalLineChart3, GetLineChartDataset1_hourly, GetLineChartDataset2_hourly);
-            HandleRedraw(wirelessChart, GetWirelessDataset1);
-            InvokeAsync(StateHasChanged);
+            Refresh(scale);
         };
         timer2.Start();
     }
@@ -585,5 +604,33 @@
     {
         timer.Dispose();
         timer2.Dispose();
+    }
+    private object refreshLock = new object();
+    private bool isRefreshing = false;
+    async void Refresh(double x)
+    {
+        lock (refreshLock)
+        {
+            if (isRefreshing) return;
+            isRefreshing = true;
+        }
+
+        try
+        {
+            scale = x;
+            HandleRedraw(horizontalLineChart2, GetLineChartDataset1_daily, GetLineChartDataset2_daily);
+            HandleRedraw(horizontalLineChart3, GetLineChartDataset1_hourly, GetLineChartDataset2_hourly);
+            HandleRedraw(wirelessChart, GetWirelessDataset1);
+            await InvokeAsync(StateHasChanged);
+            await Task.Delay(50);
+        }
+        finally
+        {
+            lock (refreshLock)
+            {
+                isRefreshing = false;
+            }
+        }
+
     }
 }
