@@ -1,0 +1,33 @@
+﻿@page "/tstdyson"
+@using BlazorStrap
+@using System.Timers
+<h3>TSTDyson</h3>
+
+<BSLabel>太阳帆: @TSTDysonManager.amountDSPSolarSail / @(TSTDysonManager.amountDSPSolarSail*256+2048)</BSLabel>
+<BSProgress>
+    <BSProgressBar Color="BSColor.Primary" Value="@((double) (TSTDysonManager.amountDSPSolarSail / (TSTDysonManager.amountDSPSolarSail * 256 + 2048) * 100))">
+            @(Math.Round(((double)(TSTDysonManager.amountDSPSolarSail / (TSTDysonManager.amountDSPSolarSail * 256 + 2048) * 100))))%
+    </BSProgressBar>
+</BSProgress>
+
+
+<BSLabel>能量点: @TSTDysonManager.usedDSPPowerPoint / @TSTDysonManager.maxDSPPowerPoint</BSLabel>
+<BSProgress>
+    <BSProgressBar Color="BSColor.Primary" Value="@((double) (TSTDysonManager.usedDSPPowerPoint / TSTDysonManager.maxDSPPowerPoint) * 100)">
+        @(Math.Round(((double)(TSTDysonManager.usedDSPPowerPoint / TSTDysonManager.maxDSPPowerPoint) * 100)))%
+    </BSProgressBar>
+</BSProgress>
+<BSLabel>理论发电 @TSTDysonManager.eut</BSLabel>
+@code {
+    Timer timer = new Timer(1000);
+    protected override async Task OnInitializedAsync()
+    {
+        timer.Elapsed += (sender, args) =>
+        {
+            InvokeAsync(StateHasChanged);
+        };
+        timer.Start();
+        
+    }
+
+}

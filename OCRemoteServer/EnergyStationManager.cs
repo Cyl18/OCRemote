@@ -45,6 +45,8 @@ namespace OCRemoteServer
                     {
                         if (DateTime.Now.Second != start.Second)
                         {
+                            await TSTDysonManager.DoTick();
+
                             using var ctx = new MyDbContext();
                             var storeR = RemoteManager.Request("return getStorageEnergyStatus()");
                             var dateNow = DateTime.Now;
