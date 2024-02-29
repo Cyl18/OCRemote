@@ -3,21 +3,25 @@
 @using System.Timers
 <h3>TSTDyson</h3>
 
-<BSLabel>太阳帆: @TSTDysonManager.amountDSPSolarSail / @(TSTDysonManager.amountDSPSolarSail*256+2048)</BSLabel>
+<BSLabel>节点数量: @TSTDysonManager.amountDSPNode</BSLabel>
+<br/>
+<BSLabel>太阳帆: @TSTDysonManager.amountDSPSolarSail / @(TSTDysonManager.amountDSPNode*256+2048)</BSLabel>
 <BSProgress>
-    <BSProgressBar Color="BSColor.Primary" Value="@((double) (TSTDysonManager.amountDSPSolarSail / (TSTDysonManager.amountDSPSolarSail * 256 + 2048) * 100))">
-            @(Math.Round(((double)(TSTDysonManager.amountDSPSolarSail / (TSTDysonManager.amountDSPSolarSail * 256 + 2048) * 100))))%
+        <BSProgressBar Color="BSColor.Primary" Value="@((double) (TSTDysonManager.amountDSPSolarSail / (TSTDysonManager.amountDSPNode * 256 + 2048) * 100))">
+            @(Math.Round(((double)(TSTDysonManager.amountDSPSolarSail / (TSTDysonManager.amountDSPNode * 256 + 2048) * 100))))%
     </BSProgressBar>
 </BSProgress>
 
 
 <BSLabel>能量点: @TSTDysonManager.usedDSPPowerPoint / @TSTDysonManager.maxDSPPowerPoint</BSLabel>
 <BSProgress>
-    <BSProgressBar Color="BSColor.Primary" Value="@((double) (TSTDysonManager.usedDSPPowerPoint / TSTDysonManager.maxDSPPowerPoint) * 100)">
-        @(Math.Round(((double)(TSTDysonManager.usedDSPPowerPoint / TSTDysonManager.maxDSPPowerPoint) * 100)))%
+    <BSProgressBar Color="BSColor.Primary" Value="@( ((double)TSTDysonManager.usedDSPPowerPoint / Math.Min((double)TSTDysonManager.maxDSPPowerPoint, 1)) * 100)">
+        @(Math.Round((((double)TSTDysonManager.usedDSPPowerPoint / Math.Min((double)TSTDysonManager.maxDSPPowerPoint, 1)) * 100)))%
     </BSProgressBar>
 </BSProgress>
-<BSLabel>理论发电 @TSTDysonManager.eut</BSLabel>
+<BSLabel>理论发电 @TSTDysonManager.eut EU/t (@(TSTDysonManager.eut / 2147483647d) A MAX)</BSLabel>
+<br />
+<BSLabel>理论最大发电 @((TSTDysonManager.maxeut).ToString("N0")) EU/t (@((TSTDysonManager.maxeut / 2147483647d).ToString("N0")) A MAX)</BSLabel>
 @code {
     Timer timer = new Timer(1000);
     protected override async Task OnInitializedAsync()

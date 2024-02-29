@@ -10,29 +10,39 @@ namespace OCRemoteServer
 
         public static async Task DoTick()
         {
-            var req = JsonDocument.Parse(await RemoteManager.Request("return getTSTDysonStatus()")).RootElement.EnumerateArray().ToArray()
-                .Select(x => x.GetString()).ToArray();
+            try
+            {
+                var req = JsonDocument.Parse(await RemoteManager.Request("return getTSTDysonStatus()")).RootElement
+                    .EnumerateArray().ToArray()
+                    .Select(x => x.GetString()).ToArray();
 
-            var rawData = req[11];
-            remainingTime = req[12].Split('r').Last(); // haha
-            amountDSPSolarSail = rawData.GetLastPart("amountDSPSolarSail:").GetFirstPart(" ").ToBigInteger();
-            amountDSPNode = rawData.GetLastPart("amountDSPNode:").GetFirstPart(" ").ToBigInteger();
-            maxDSPPowerPoint = rawData.GetLastPart("maxDSPPowerPoint:").GetFirstPart(" ").ToBigInteger();
-            usedDSPPowerPoint = rawData.GetLastPart("usedDSPPowerPoint:").GetFirstPart(" ").ToBigInteger();
-            eut = (double)usedDSPPowerPoint * Coefficient;
+                var rawData = req[11];
+                remainingTime = req[12].Split('r').Last(); // haha
+                amountDSPSolarSail = rawData.GetLastPart("amountDSPSolarSail:").GetFirstPart(" ").ToDouble();
+                amountDSPNode = rawData.GetLastPart("amountDSPNode:").GetFirstPart(" ").ToDouble();
+                maxDSPPowerPoint = rawData.GetLastPart("maxDSPPowerPoint:").GetFirstPart(" ").ToDouble();
+                usedDSPPowerPoint = rawData.GetLastPart("usedDSPPowerPoint:").GetFirstPart(" ").ToDouble();
+                eut = (double) usedDSPPowerPoint * Coefficient;
+                maxeut = (double) maxDSPPowerPoint * Coefficient;
 
+            }
+            catch (Exception e)
+            {
+                //Console.WriteLine(e);
+            }
         }
 
         public static string remainingTime { get; set; }
 
         public static double eut { get; set; }
+        public static double maxeut { get; set; }
 
-        public static BigInteger amountDSPSolarSail { get; set; }
+        public static double amountDSPSolarSail { get; set; }
 
-        public static BigInteger amountDSPNode { get; set; }
+        public static double amountDSPNode { get; set; }
 
-        public static BigInteger maxDSPPowerPoint { get; set; }
+        public static double maxDSPPowerPoint { get; set; }
 
-        public static BigInteger usedDSPPowerPoint { get; set; }
+        public static double usedDSPPowerPoint { get; set; }
     }
 }
