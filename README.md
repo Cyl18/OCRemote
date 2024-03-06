@@ -21,6 +21,7 @@
 - 如果 MC 服务端和运行此项目不是在同一台主机运行，你需要在 `OCServer/server2.lua` 修改 http 地址，如果你需要修改端口，可以在 `Programs.cs` 内修改
 - 将 OCServer 下的文件 全部弄到游戏内，运行 OCServer
 - 修改 OC 配置文件 `允许访问本地 ip，解除内存限制（或者使用魔法内存），CPU 加速（我不知道是否需要）`，本项目根目录带了一份可以用的 `OpenComputers.cfg`
+- 修改 `OC/energy_station.lua` 和 `OCRemoteServer/EnergyStationManager.cs`，对应你家的能源站拓扑结构，看不懂可以问我
 - 去搞一个 blazorise token, 修改 Config.cs, token 直接找 Cyl18 要就行
 - 运行，如果要运行在公网可以反代
 
