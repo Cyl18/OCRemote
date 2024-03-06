@@ -1,6 +1,9 @@
 -- for k,v in pairs(c.me_controller.getCpus()[1]['cpu']) do print(k,v) end
 -- for k,v in pairs() do print(k,v) end
 
+
+
+
 function GetAllCpuInfo()
     local cpus = c.me_controller.getCpus()
     for _,v in pairs(cpus)do

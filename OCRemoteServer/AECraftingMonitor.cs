@@ -20,20 +20,15 @@ namespace OCRemoteServer
             {
                 cpuInfo.ID = i++;
             }
-            foreach (var cpuInfo in request)
-            {
-                if (cpuInfo.Busy)
-                {
-                    var info = JsonDocument.Parse(await RemoteManager.Request($"return GetCpuInfo({cpuInfo.ID})").ConfigureAwait(false)).RootElement.GetString();
-                    var item = info.Split("^#^#")[3].JsonDeserialize<AEItem>();
-                    cpuInfo.CraftingItem = item;
-                }
-            }
 
             var set1 = new List<CraftingPlan>();
             foreach (var cpuInfo in request.Where(x => x.Busy && x.Name.Length > 1))
             {
+                var info = JsonDocument.Parse(await RemoteManager.Request($"return GetCpuInfo({cpuInfo.ID})").ConfigureAwait(false)).RootElement.GetString();
+                var item = info.Split("^#^#")[3].JsonDeserialize<AEItem>();
+                cpuInfo.CraftingItem = item;
                 set1.Add(new CraftingPlan(DateTime.Now, cpuInfo.ID, cpuInfo.CraftingItem));
+                await Task.Delay(1000);
             }
             // 将新合成的物品加入列表
             foreach (var plan in set1)
@@ -43,6 +38,7 @@ namespace OCRemoteServer
                 {
                     set.Add(plan);
                 }
+
             }
 
             // 处理合成完的物品

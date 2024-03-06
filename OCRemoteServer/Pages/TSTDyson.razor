@@ -15,11 +15,11 @@
 
 <BSLabel>能量点: @TSTDysonManager.usedDSPPowerPoint / @TSTDysonManager.maxDSPPowerPoint</BSLabel>
 <BSProgress>
-    <BSProgressBar Color="BSColor.Primary" Value="@( ((double)TSTDysonManager.usedDSPPowerPoint / Math.Min((double)TSTDysonManager.maxDSPPowerPoint, 1)) * 100)">
-        @(Math.Round((((double)TSTDysonManager.usedDSPPowerPoint / Math.Min((double)TSTDysonManager.maxDSPPowerPoint, 1)) * 100)))%
+    <BSProgressBar Color="BSColor.Primary" Value="@( ((double)TSTDysonManager.usedDSPPowerPoint / Math.Max((double)TSTDysonManager.maxDSPPowerPoint, 1)) * 100)">
+        @(Math.Round((((double)TSTDysonManager.usedDSPPowerPoint / Math.Max((double)TSTDysonManager.maxDSPPowerPoint, 1)) * 100)))%
     </BSProgressBar>
 </BSProgress>
-<BSLabel>理论发电 @TSTDysonManager.eut EU/t (@(TSTDysonManager.eut / 2147483647d) A MAX)</BSLabel>
+<BSLabel>理论发电 @TSTDysonManager.eut.ToString("N0") EU/t (@((TSTDysonManager.eut / 2147483647d).ToString("N0")) A MAX)</BSLabel>
 <br />
 <BSLabel>理论最大发电 @((TSTDysonManager.maxeut).ToString("N0")) EU/t (@((TSTDysonManager.maxeut / 2147483647d).ToString("N0")) A MAX)</BSLabel>
 @code {

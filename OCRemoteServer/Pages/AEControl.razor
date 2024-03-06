@@ -4,6 +4,7 @@
 @using System.Timers
 @using BlazorStrap
 @using System.Text.Json
+@using System.Diagnostics
 @inject IJSRuntime js;
 @inject IBlazorStrap _blazorStrap
 @inject NavigationManager nav
@@ -128,7 +129,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var items = (await RemoteManager.Request("return require(\"component\").me_controller.getItemsInNetwork()")).JsonDeserialize<List<AEItem>>();
+        var sw = Stopwatch.StartNew();
+        var items = (await RemoteManager.Request("return require(\"component\").me_controller.getItemsInNetwork()"))
+            .JsonDeserialize<List<AEItem>>();
+        Console.WriteLine($"GetAllAEItems took {sw.Elapsed.TotalSeconds:N2}s");
+
         AEManager.LastAEItem = items;
         IEnumerable<AEItem> items1 = items;
         while (items1.Any())

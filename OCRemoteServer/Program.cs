@@ -9,9 +9,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OCRemoteServer;
 using OCRemoteServer.Controller;
-
-
-
+using Config = OCRemoteServer.Config;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,7 +23,7 @@ builder.Services
     .AddBlazorise(options =>
     {
         options.Immediate = true;
-        options.ProductToken = File.ReadAllText("..\\blazorise.txt").Trim();
+        options.ProductToken = Config.BlazoriseToken;
     })
     .AddBootstrap5Providers()
     .AddFontAwesomeIcons();

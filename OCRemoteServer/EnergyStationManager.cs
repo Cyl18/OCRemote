@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Numerics;
+using System.Text.RegularExpressions;
 
 namespace OCRemoteServer
 {
@@ -17,7 +18,7 @@ namespace OCRemoteServer
         public static BigInteger lastMainStorage;
         public static void Init()
         {
-            if (!File.Exists("../es.db"))
+            if (!File.Exists(Config.DatabasePath))
             {
                 using var context = new MyDbContext();
                 context.Database.EnsureDeleted();
@@ -53,27 +54,27 @@ namespace OCRemoteServer
 
                             var root = JsonDocument.Parse(await storeR).RootElement.EnumerateArray().ToArray()
                                 .Select(x => x.EnumerateArray().Select(x => x.GetString()).ToArray()).ToArray();
-                            var store = root[0];
-                            var in1 = root[1]; // naq
-                            var in2 = root[2]; // dyson
 
+                            var store = root[0];
                             lastMainStorage = Normalize(store[1]!);
-                            //var used = Normalize(store[1]!) + dysonStore + syncStore; // store 的
+                            var total = Normalize(store[2]!); // store 的
+
                             var used = root.Select(x => Normalize(x[1]!)).Aggregate((a, b) => a + b);
 
-                            var total = Normalize(store[2]!); // store 的
+                            // ** 你可能需要修改下面的内容 **
+                            var in1 = root[1]; // naq
+                            var in2 = root[2]; // dyson
                             var naqIn = Normalize(in1[6]!);
                             var dysonIn = Normalize(in2[6]!);
-                            //var wireless = Normalize(root.Last()[14]!); // 无线存储
-                            var wireless = root.Select(x => Normalize(x[14]!)).Last(); // 无线存储
+                            var avgin = naqIn + dysonIn + (BigInteger)TSTDysonManager.eut; // eu in
+                            // ** 你可能需要修改上面的内容 **
 
-                            var avgin = naqIn + dysonIn; // eu in
+                            var wireless = root.Select(x => Normalize(x[14]!)).Last(); // 无线存储
 
                             if ((DateTime.Now - lastDate).TotalSeconds > 5)
                             {
                                 goto end;
                             }
-
 
 
                             if (latestValue.Count >= 50)
@@ -91,15 +92,15 @@ namespace OCRemoteServer
                             var outUv = (deltaInTick) / 524288;
                             if (Math.Abs(outUv) > 70000000)
                             {
-                                Console.Clear();
-                                Console.WriteLine($"\nin {inUv:N0} delta {outUv:N0} lastwireless {lastWireless/524288/3600/20} wireless {wireless/524288/3600/20} delta {(wireless-lastWireless) / 524288 / 3600 / 20} ");
+                                //Console.Clear();
+                                //Console.WriteLine($"\nin {inUv:N0} delta {outUv:N0} lastwireless {lastWireless/524288/3600/20} wireless {wireless/524288/3600/20} delta {(wireless-lastWireless) / 524288 / 3600 / 20} ");
                                 for (int i = 0; i < root.Length; i++)
                                 {
                                     var s = root[i][1];
                                     var s1 = lastRoot[i][1];
                                     var nn = Normalize(s) / 524288 / 3600 / 20;
                                     var nn2 = Normalize(s1) / 524288 / 3600 / 20;
-                                    Console.WriteLine($"i{i} {nn} {nn2} delta{nn2-nn}");
+                                    //Console.WriteLine($"i{i} {nn} {nn2} delta{nn2-nn}");
                                 }
 
                                 //Thread.Sleep(5000);
@@ -161,7 +162,10 @@ namespace OCRemoteServer
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite(@"DataSource=../es.db;");
+            optionsBuilder.UseSqlite($@"DataSource={Config.DatabasePath};").LogTo(x =>
+            {
+                //Console.WriteLine(Regex.Match(x, "(\\d+ms)", RegexOptions.Multiline).Groups[1].Value);
+            }, LogLevel.Information);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

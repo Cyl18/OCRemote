@@ -26,7 +26,7 @@ namespace OCRemoteServer
 
         internal static void LoadItems()
         {
-            foreach (var s in File.ReadAllLines("../itempanel.csv").Skip(1))
+            foreach (var s in File.ReadAllLines(Config.ItemPanelPath).Skip(1))
             {
                 var strings = s.Split(',');
                 var item = new Item(strings[0], strings[1].ToInt(), strings[2].ToInt(),
@@ -45,7 +45,7 @@ namespace OCRemoteServer
         [J("hasTag")] public bool HasTag { get; set; }
         [J("damage")] public int Damage { get; set; }
         [J("isCraftable")] public bool IsCraftable { get; set; }
-        [J("size")] public long Size { get; set; }
+        [J("size")] public decimal Size { get; set; }
         [J("maxSize")] public long MaxSize { get; set; }
         [J("name")] public string Name { get; set; }
         [J("maxDamage")] public long MaxDamage { get; set; }

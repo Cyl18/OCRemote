@@ -9,7 +9,8 @@ namespace OCRemoteServer
         public static async Task Init()
         {
             var httpApi = new HttpApiClient();
-            httpApi.ApiAddress = "http://192.168.1.5:5700/";
+            //httpApi.ApiAddress = "http://192.168.1.5:5700/";
+            httpApi.ApiAddress = "http://192.168.0.85:5700/";
             c = httpApi;
         }
 

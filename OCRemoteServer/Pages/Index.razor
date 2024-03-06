@@ -16,19 +16,38 @@
 <h1>G T N H</h1>
 
 <div style="white-space: pre-line; line-height: 120%">@((MarkupString)energyStatus)</div>
-<BSContainer>
-<BSRow Justify="Justify.Start">
-    <BSCol Column="1">
-            <BSLabel>Smooth scale</BSLabel>
-    </BSCol>
-    <BSCol Column="4">
-        <input class="form-range" type="range" value="@scale" @oninput="(x) => Refresh(Convert.ToDouble(x.Value))" step="0.5" min="1.5" max="250" />
-    </BSCol>
-    <BSCol Column="1">
-        <BSLabel>@(scale.ToString("N1"))</BSLabel>
-    </BSCol>
-</BSRow>
-</BSContainer>
+<BSCard CardType="CardType.Card" style="width: 36rem;" MarginTop="Margins.Medium">
+<BSCard CardType="CardType.Body">
+   
+    
+    <BSContainer>
+        <BSRow Justify="Justify.Start">
+            <BSCol Column="3">
+                <BSLabel>Smooth scale</BSLabel>
+            </BSCol>
+            <BSCol Column="7">
+                <input class="form-range" type="range" value="@scale" @oninput="(x) => Refresh(Convert.ToDouble(x.Value))" step="0.5" min="1.5" max="250" />
+            </BSCol>
+            <BSCol Column="1">
+                <BSLabel>@(scale.ToString("N1"))</BSLabel>
+            </BSCol>
+        </BSRow>
+    
+        <BSRow>
+            <BSCol Column="12">
+
+                @code {
+                    bool beginFromZero = false;
+                }
+                <div Class="@BS.Form_Check">
+                    <BSInputCheckbox CheckedValue="true" UnCheckedValue="false" @oninput="() => OnWirelessChartStartsFromZeroChange()" id="sb" @bind-Value="beginFromZero" />
+                    <BSLabel IsCheckLabel="true" for="sb">Wireless chart begins from zero</BSLabel>
+                </div>
+            </BSCol>
+        </BSRow>
+    </BSContainer>
+</BSCard>
+</BSCard>
 <BSTable>
     <BSTBody>
         <BSTR style="display: flex;">
@@ -143,7 +162,7 @@
             Duration = 0
         }
     };
-
+    
     object wirelessChartOptions = new
     {
         Scales = new
@@ -196,6 +215,62 @@
             Duration = 0
         }
     };
+
+    object wirelessChartOptions2 = new
+    {
+        Scales = new
+        {
+            X = new
+            {
+                type = "time",
+                time = new
+                {
+                    displayFormats = new
+                    {
+                        quarter = "MMM YYYY"
+                    }
+                }
+            },
+            Y = new
+            {
+                Title = new
+                {
+                    Display = true,
+                    Text = "Ah MAX"
+                },
+                BeginAtZero = true
+            }
+        },
+        Interaction = new
+        {
+            intersect = false
+        },
+        Plugins = new
+        {
+            Zoom = new
+            {
+                Zoom = new
+                {
+                    wheel = new
+                    {
+                        Enabled = true,
+
+                    },
+                    Mode = "x"
+                },
+                Pan = new
+                {
+                    Enabled = true,
+                    Mode = "x"
+                }
+            }
+        },
+        Animation = new
+        {
+            Duration = 0
+        }
+    };
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -632,5 +707,19 @@
             }
         }
 
+    }
+
+    void OnWirelessChartStartsFromZeroChange()
+    {
+        if (!beginFromZero)
+        {
+            wirelessChart.SetOptionsObject(wirelessChartOptions);
+        }
+        else
+        {
+            wirelessChart.SetOptionsObject(wirelessChartOptions2);
+
+        }
+        Refresh(scale);
     }
 }
