@@ -18,14 +18,15 @@
 
 - 安装 rider 或 vs，.net 7 sdk
 - 从 NEI 找到数据存储 导出物品面板 128*128png 在 `OCRemoteServer/Config.cs` 中路径改过去
-- 如果 MC 服务端和运行此项目不是在同一台主机运行，在`OCServer/server2.lua` 修改 http 地址，如果你需要修改端口，可以在 `Programs.cs` 内修改
-- OCServer 下的文件 全部弄到游戏内，运行 OCServer
-- 可以修改 OC 配置文件 `允许访问本地 ip，解除内存限制（或者使用魔法内存），CPU 加速（我不知道是否需要）`，本项目根目录带了一份可以用的 `OpenComputers.cfg`
-- 去搞一个 blazorise token 运行根目录新建 blazorise.txt, token 直接找 Cyl18 要也行
+- 如果 MC 服务端和运行此项目不是在同一台主机运行，你需要在 `OCServer/server2.lua` 修改 http 地址，如果你需要修改端口，可以在 `Programs.cs` 内修改
+- 将 OCServer 下的文件 全部弄到游戏内，运行 OCServer
+- 修改 OC 配置文件 `允许访问本地 ip，解除内存限制（或者使用魔法内存），CPU 加速（我不知道是否需要）`，本项目根目录带了一份可以用的 `OpenComputers.cfg`
+- 去搞一个 blazorise token, 修改 Config.cs, token 直接找 Cyl18 要就行
 - 反代然后运行
 
 ## Showcase
 
+![image](https://github.com/Cyl18/OCRemote/assets/14993992/d3087ffc-1a83-4a53-a0e3-c1687a12dd7c)
 ![a](docs/1.png)
 ![a](docs/2.png)
 ![a](docs/3.5.jpg)
