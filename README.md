@@ -22,7 +22,7 @@
 - 将 OCServer 下的文件 全部弄到游戏内，运行 OCServer
 - 修改 OC 配置文件 `允许访问本地 ip，解除内存限制（或者使用魔法内存），CPU 加速（我不知道是否需要）`，本项目根目录带了一份可以用的 `OpenComputers.cfg`
 - 去搞一个 blazorise token, 修改 Config.cs, token 直接找 Cyl18 要就行
-- 反代然后运行
+- 运行，如果要运行在公网可以反代
 
 ## Showcase
 
